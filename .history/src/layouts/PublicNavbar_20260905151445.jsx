@@ -56,10 +56,10 @@ export default function PublicNavbar() {
           </Link>
 
           <Link
-          to={ROUTES.LOGIN}
-          className="flex h-[42px] min-w-[129px] items-center justify-center rounded-full bg-gradient-to-r from-[#D4A853] to-[#B87333] px-[25px] !text-[13px] font-bold !text-[#0A0A0A] transition-transform duration-200 hover:scale-[1.03]"
+            to={ROUTES.LOGIN}
+            className="flex h-[42px] min-w-[129px] items-center justify-center rounded-full bg-gradient-to-r from-[#D4A853] to-[#B87333] px-[25px] !text-[13px] font-semibold !text-[#0A0A0A] transition-transform duration-200 hover:scale-[1.03]"
           >
-          Launch App
+            Launch App
           </Link>
         </div>
 
