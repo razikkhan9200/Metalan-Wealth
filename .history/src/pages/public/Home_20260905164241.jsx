@@ -24,7 +24,6 @@ export default function Home() {
 
       <Tokenization />
       <Funds />
-      <FaixEcosystem />
       <section className="border-b border-slate-200 bg-white">
         <Container className="grid gap-4 py-8 sm:grid-cols-3">
           {[

@@ -12,19 +12,13 @@ import Heading from "../../components/ui/Heading";
 import Text from "../../components/ui/Text";
 import Card from "../../components/ui/Card";
 import Hero from "../../sections/home/Hero";
-import Tokenization from "../../sections/home/Tokenization";
 import { ROUTES } from "../../constants/routes";
-import Funds from "../../sections/home/Funds";
-import FaixEcosystem from "../../sections/home/FaixEcosystem";
 
 export default function Home() {
   return (
     <div>
       <Hero />
 
-      <Tokenization />
-      <Funds />
-      <FaixEcosystem />
       <section className="border-b border-slate-200 bg-white">
         <Container className="grid gap-4 py-8 sm:grid-cols-3">
           {[

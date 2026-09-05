@@ -15,7 +15,8 @@ export default function PublicNavbar() {
 
   return (
     <header className="absolute left-0 top-0 z-50 w-full border-b border-white/[0.06] !bg-transparent text-white backdrop-blur-md">
-      <div className="mx-auto flex h-[80px] w-full max-w-[1440px] items-center px-6 lg:px-[80px]">
+     <div className="mx-auto flex h-[80px] w-full max-w-[1440px] items-center px-6 lg:px-[80px]">
+
         <Link
           to={ROUTES.HOME}
           className="flex shrink-0 items-center gap-2"
@@ -32,18 +33,19 @@ export default function PublicNavbar() {
         </Link>
 
         <nav className="ml-[120px] hidden h-full items-center gap-[39px] lg:flex">
-          {navigation.map((item) => (
-            <NavLink
-              key={item.label}
-              to={item.href}
-              className="text-[14px] font-medium !text-[#8F9A96] transition-colors duration-200 hover:text-[#F1EEE7]"
-            >
-              {item.label}
-            </NavLink>
-          ))}
+       {navigation.map((item) => (
+  <NavLink
+    key={item.label}
+    to={item.href}
+    className="text-[14px] font-medium !text-[#8F9A96] transition-colors duration-200 hover:text-[#F1EEE7]"
+  >
+    {item.label}
+  </NavLink>
+))}
         </nav>
 
         <div className="ml-auto hidden items-center gap-[31px] lg:flex">
+
           <div className="whitespace-nowrap font-mono text-[12px] font-semibold tracking-[-0.2px] text-[#00D4AA]">
             ₣1 FAIX = $0.80 ↗2.4%
           </div>
@@ -55,12 +57,13 @@ export default function PublicNavbar() {
             Sign In
           </Link>
 
-          <Link
-          to={ROUTES.LOGIN}
-          className="flex h-[42px] min-w-[129px] items-center justify-center rounded-full bg-gradient-to-r from-[#D4A853] to-[#B87333] px-[25px] !text-[13px] font-bold !text-[#0A0A0A] transition-transform duration-200 hover:scale-[1.03]"
-          >
-          Launch App
-          </Link>
+         <Link
+  to={ROUTES.LOGIN}
+  className="flex h-[42px] min-w-[129px] items-center justify-center rounded-full bg-gradient-to-r from-[#D4A853] to-[#B87333] px-[25px] text-[13px] font-semibold text-[#0A0A0A] transition-transform duration-200 hover:scale-[1.03]"
+>
+  Launch App
+</Link>
+
         </div>
 
         <button
@@ -75,8 +78,9 @@ export default function PublicNavbar() {
       </div>
 
       {open && (
-        <div className="absolute left-0 top-[80px] w-full border-t border-white/[0.06] bg-[#0A0A0A] lg:hidden">
+        <div className="absolute left-0 top-[88px] w-full border-t border-white/[0.06] bg-[#0A0A0A] lg:hidden">
           <nav className="flex flex-col px-6 py-7">
+
             {navigation.map((item) => (
               <NavLink
                 key={item.label}
@@ -86,7 +90,7 @@ export default function PublicNavbar() {
                   `py-[11px] text-[14px] font-medium ${
                     isActive
                       ? "text-[#D4A853]"
-                      : "!text-[#8F9A96] hover:text-[#F1EEE7]"
+                      : "!text-[#8F8F8A] hover:text-[#F1EEE7]"
                   }`
                 }
               >
@@ -95,6 +99,7 @@ export default function PublicNavbar() {
             ))}
 
             <div className="mt-4 border-t border-white/[0.06] pt-6">
+
               <div className="mb-6 font-mono text-[12px] font-semibold text-[#00D4AA]">
                 ₣1 FAIX = $0.80 ↗2.4%
               </div>
@@ -102,7 +107,7 @@ export default function PublicNavbar() {
               <Link
                 to={ROUTES.LOGIN}
                 onClick={() => setOpen(false)}
-                className="mb-5 block text-[14px] font-medium !text-[#8F9A96] hover:!text-[#F1EEE7]"
+                className="mb-5 block text-[14px] font-medium text-[#8F8F8A] hover:text-[#F1EEE7]"
               >
                 Sign In
               </Link>
@@ -110,10 +115,11 @@ export default function PublicNavbar() {
               <Link
                 to={ROUTES.LOGIN}
                 onClick={() => setOpen(false)}
-                className="flex h-[46px] w-full items-center justify-center rounded-full bg-gradient-to-r from-[#D4A853] to-[#B87333] text-[14px] font-semibold text-[#0A0A0A]"
+                className="flex h-[46px] w-full items-center justify-center rounded-full bg-[#D4A853] text-[14px] font-semibold text-[#0A0A0A]"
               >
                 Launch App
               </Link>
+
             </div>
           </nav>
         </div>
