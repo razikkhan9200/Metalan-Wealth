@@ -494,7 +494,7 @@ export default function Dashboard() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="rounded-xl bg-black/30 p-3">
                   <p className="text-[11px] text-white/40">FAIX Tokens Held</p>
-                  <p className="mt-1 font-mono text-base font-semibold text-white">
+                  <p className="mt-1 font-mono text-base font-semibold text-[#e8b46a]">
                     24,850
                   </p>
                 </div>

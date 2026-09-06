@@ -37,8 +37,7 @@ import DashboardFunds from "../pages/dashboard/funds/Funds";
 import FundDetails from "../pages/dashboard/funds/Funddetails";
 import DashboardExchange from "../pages/dashboard/exchange/Exchange";
 import DashboardWallet from "../pages/dashboard/wallet/Wallet";
-import Transactions from "../pages/dashboard/transactions/Transactions";
-import Profile from "../pages/dashboard/profile/Profile";
+import Profile from "../pages/dashboard/profile/UserProfilePanel";
 import Referrals from "../pages/dashboard/referrals/Referrals";
 import Settings from "../pages/dashboard/settings/Settings";
 
@@ -152,11 +151,6 @@ export default function AppRoutes() {
           element={<DashboardWallet />}
         />
 
-        {/* Transactions */}
-        <Route
-          path={ROUTES.DASHBOARD_TRANSACTIONS}
-          element={<Transactions />}
-        />
 
         {/* User Profile / KYC */}
         <Route

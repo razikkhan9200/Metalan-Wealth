@@ -1,9 +1,14 @@
 /* pages/dashboard/funds/Funddetails.jsx: application source file. Single-fund detail + investment page. */
 import { useMemo, useState } from "react";
+
+// React Router
 import { useParams, Link } from "react-router-dom";
 
+// UI components
 import Navbar from "../../../layouts/DashboardNavbar";
 import Text from "../../../components/ui/Text";
+
+// Data & constants
 import { ROUTES } from "../../../constants/routes";
 import { getFundBySlug } from "../../../data/funds";
 

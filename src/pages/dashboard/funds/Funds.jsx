@@ -1,13 +1,19 @@
 /* pages/dashboard/funds/Funds.jsx: application source file. Expert-managed capital funds marketplace. */
 import { useMemo, useState } from "react";
+
+// React Router
 import { useNavigate } from "react-router-dom";
 
+// UI components
 import Navbar from "../../../layouts/DashboardNavbar";
 import Text from "../../../components/ui/Text";
 import Button from "../../../components/ui/Button";
+
+// Data & constants
 import { ROUTES } from "../../../constants/routes";
 import { FUNDS } from "../../../data/funds";
 
+// Images
 import heroBg from "../../../../public/images/funds-hero.png";
 
 // Shared brand colors — same values used across Login/Dashboard/Property

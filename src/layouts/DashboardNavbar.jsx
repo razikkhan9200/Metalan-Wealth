@@ -7,6 +7,9 @@ import { Bell } from "lucide-react";
 // Routes
 import { ROUTES } from "../constants/routes";
 
+// 
+import UserProfilePanel from "../pages/dashboard/profile/UserProfilePanel";
+
 
 const ACCENT = "#1A3C34";
 const GOLD = "#e8b46a";
@@ -15,8 +18,8 @@ const NAV_LINKS = [
   { label: "Dashboard", to: ROUTES.DASHBOARD || "#" },
   { label: "Property", to: ROUTES.DASHBOARD_PROPERTIES || "#" },
   { label: "Funds", to: ROUTES.DASHBOARD_FUNDS || "#" },
-  { label: "Exchange", to: ROUTES.EXCHANGE || "#" },
-  { label: "Wallet", to: ROUTES.WALLET || "#" },
+  { label: "Exchange", to: ROUTES.DASHBOARD_EXCHANGE || "#" },
+  { label: "Wallet", to: ROUTES.DASHBOARD_WALLET || "#" },
 ];
 
 /**
@@ -89,7 +92,7 @@ export default function Navbar({
         <div className="flex items-center gap-3 sm:gap-4">
           <div
             className="hidden items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold text-white sm:flex"
-            style={{ borderColor: `${ACCENT}99`, background: `${ACCENT}33` }}
+            style={{ borderColor: `${ACCENT}99`, background: `${ACCENT}77` }}
           >
             <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#e8b46a]/20 text-[9px] text-[#e8b46a]">
               F
@@ -111,11 +114,14 @@ export default function Navbar({
             )}
           </button>
 
-          {/* Profile icon + its modal. UserProfileMenu owns its own
-              open/closed state internally, so Navbar just hands it the
-              user data and a sign-out callback — see
-              components/ui/UserProfileMenu.jsx. */}
-          {/* <UserProfileMenu user={user} onSignOut={onSignOut} /> */}
+          {/* Profile icon + its slide-in edit panel. UserProfilePanel
+              owns its own open/closed state and fetches the profile
+              itself via userService — Navbar doesn't need to pass it
+              any data. (The `user`/`onSignOut` props below are now
+              unused leftovers from an earlier design; harmless to keep
+              since every page already passes them, but safe to remove
+              once those call sites are cleaned up.) */}
+          <UserProfilePanel />
         </div>
       </div>
     </header>
