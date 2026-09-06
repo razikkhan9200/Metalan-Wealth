@@ -27,8 +27,20 @@ import Login from "../pages/auth/Login";
 
 // Dashboard Pages
 import Dashboard from "../pages/dashboard/Dashboard";
-import DashboardProperties from "../pages/dashboard/Properties";
+// NOTE: this now points at pages/property/Property.jsx — the
+// filter/sort marketplace grid driven by data/properties.js — instead
+// of the old dashboard/Properties.jsx stub. Same route, one real page
+// instead of two competing versions of "the properties list".
+// import DashboardProperties from "../pages/property/Property";
+import DashboardProperties from "../pages/dashboard/Property";
+
+import PropertyDetail from "../pages/dashboard/Propertydetail";
 import DashboardFunds from "../pages/dashboard/Funds";
+// Fund detail / invest page — mirrors PropertyDetail below: reads its
+// slug via useParams() and looks it up in data/funds.js, rather than
+// being handed a fund object as a prop. This is what "VIEW FUND" on
+// the marketplace grid now actually navigates to.
+import FundDetails from "../pages/dashboard/Funddetails";
 import DashboardExchange from "../pages/dashboard/Exchange";
 import DashboardWallet from "../pages/dashboard/Wallet";
 import Transactions from "../pages/dashboard/Transactions";
@@ -97,23 +109,46 @@ export default function AppRoutes() {
           can access the dashboard.
       ============================================================ */}
       <Route element={<ProtectedRoute />}>
-        <Route element={<DashboardLayout />}>
+        {/* <Route element={<DashboardLayout />}> */}
           {/* Dashboard Home */}
           <Route
             path={ROUTES.DASHBOARD}
             element={<Dashboard />}
           />
 
-          {/* Property Investments */}
+          {/* Property Investments — marketplace grid */}
           <Route
             path={ROUTES.DASHBOARD_PROPERTIES}
             element={<DashboardProperties />}
           />
 
-          {/* Investment Funds */}
+          {/* Property Investments — single listing / invest page.
+              PropertyDetail.jsx reads the slug via useParams() and
+              looks it up in data/properties.js. Add a matching
+              PROPERTY_DETAIL entry to constants/routes.js if you'd
+              rather reference it as ROUTES.PROPERTY_DETAIL than the
+              literal path below. */}
+          <Route
+            path={ROUTES.PROPERTY_DETAIL || "/dashboard/properties/:slug"}
+            element={<PropertyDetail />}
+          />
+
+          {/* Investment Funds — marketplace grid */}
           <Route
             path={ROUTES.DASHBOARD_FUNDS}
             element={<DashboardFunds />}
+          />
+
+          {/* Investment Funds — single fund detail / invest page.
+              Same pattern as PropertyDetail above: FundDetails.jsx
+              reads :slug via useParams() and looks it up in
+              data/funds.js. Add ROUTES.FUND_DETAIL to
+              constants/routes.js if you'd rather reference it by name
+              than the literal fallback path below — Funds.jsx's
+              "VIEW FUND" button already checks for that same constant. */}
+          <Route
+            path={ROUTES.FUND_DETAIL || "/dashboard/funds/:slug"}
+            element={<FundDetails />}
           />
 
           {/* Token Exchange */}
@@ -156,7 +191,7 @@ export default function AppRoutes() {
             element={<Settings />}
           />
         </Route>
-      </Route>
+      {/* </Route> */}
 
       {/* ============================================================
           404 FALLBACK

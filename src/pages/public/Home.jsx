@@ -67,9 +67,7 @@ export default function Home() {
             Ecosystem
           </p>
 
-          <Heading className="mt-3 text-4xl">
-            Explore the platform
-          </Heading>
+          <Heading className="mt-3 text-4xl">Explore the platform</Heading>
 
           <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
             {[
@@ -82,9 +80,7 @@ export default function Home() {
                 <Card className="h-full transition hover:-translate-y-1 hover:shadow-lg">
                   <Icon size={25} />
 
-                  <h3 className="mt-7 text-xl font-semibold">
-                    {title}
-                  </h3>
+                  <h3 className="mt-7 text-xl font-semibold">{title}</h3>
 
                   <p className="mt-3 text-sm leading-6 text-slate-500">
                     Discover this area of the Metalan Wealth ecosystem.
