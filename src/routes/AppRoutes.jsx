@@ -3,7 +3,6 @@ import { Route, Routes } from "react-router-dom";
 
 // Layouts
 import PublicLayout from "../layouts/PublicLayout";
-import DashboardLayout from "../layouts/DashboardLayout";
 
 // Route Guards
 import PublicRoute from "./PublicRoute";
@@ -27,26 +26,21 @@ import Login from "../pages/auth/Login";
 
 // Dashboard Pages
 import Dashboard from "../pages/dashboard/Dashboard";
-// NOTE: this now points at pages/property/Property.jsx — the
-// filter/sort marketplace grid driven by data/properties.js — instead
-// of the old dashboard/Properties.jsx stub. Same route, one real page
-// instead of two competing versions of "the properties list".
-// import DashboardProperties from "../pages/property/Property";
-import DashboardProperties from "../pages/dashboard/Property";
-
-import PropertyDetail from "../pages/dashboard/Propertydetail";
-import DashboardFunds from "../pages/dashboard/Funds";
-// Fund detail / invest page — mirrors PropertyDetail below: reads its
-// slug via useParams() and looks it up in data/funds.js, rather than
-// being handed a fund object as a prop. This is what "VIEW FUND" on
-// the marketplace grid now actually navigates to.
-import FundDetails from "../pages/dashboard/Funddetails";
-import DashboardExchange from "../pages/dashboard/Exchange";
-import DashboardWallet from "../pages/dashboard/Wallet";
-import Transactions from "../pages/dashboard/Transactions";
-import Profile from "../pages/dashboard/Profile";
-import Referrals from "../pages/dashboard/Referrals";
-import Settings from "../pages/dashboard/Settings";
+// Property Investments — marketplace grid, driven by data/properties.js
+import DashboardProperties from "../pages/dashboard/property/Property";
+// Property Investments — single listing / invest page. Reads its slug
+// via useParams() and looks it up in data/properties.js.
+import PropertyDetail from "../pages/dashboard/property/Propertydetail";
+import DashboardFunds from "../pages/dashboard/funds/Funds";
+// Fund detail / invest page — mirrors PropertyDetail above: reads its
+// slug via useParams() and looks it up in data/funds.js.
+import FundDetails from "../pages/dashboard/funds/Funddetails";
+import DashboardExchange from "../pages/dashboard/exchange/Exchange";
+import DashboardWallet from "../pages/dashboard/wallet/Wallet";
+import Transactions from "../pages/dashboard/transactions/Transactions";
+import Profile from "../pages/dashboard/profile/Profile";
+import Referrals from "../pages/dashboard/referrals/Referrals";
+import Settings from "../pages/dashboard/settings/Settings";
 
 // Error Pages
 import NotFound from "../pages/errors/NotFound";
@@ -109,89 +103,79 @@ export default function AppRoutes() {
           can access the dashboard.
       ============================================================ */}
       <Route element={<ProtectedRoute />}>
-        {/* <Route element={<DashboardLayout />}> */}
-          {/* Dashboard Home */}
-          <Route
-            path={ROUTES.DASHBOARD}
-            element={<Dashboard />}
-          />
+        {/* Dashboard Home */}
+        <Route
+          path={ROUTES.DASHBOARD}
+          element={<Dashboard />}
+        />
 
-          {/* Property Investments — marketplace grid */}
-          <Route
-            path={ROUTES.DASHBOARD_PROPERTIES}
-            element={<DashboardProperties />}
-          />
+        {/* Property Investments — marketplace grid */}
+        <Route
+          path={ROUTES.DASHBOARD_PROPERTIES}
+          element={<DashboardProperties />}
+        />
 
-          {/* Property Investments — single listing / invest page.
-              PropertyDetail.jsx reads the slug via useParams() and
-              looks it up in data/properties.js. Add a matching
-              PROPERTY_DETAIL entry to constants/routes.js if you'd
-              rather reference it as ROUTES.PROPERTY_DETAIL than the
-              literal path below. */}
-          <Route
-            path={ROUTES.PROPERTY_DETAIL || "/dashboard/properties/:slug"}
-            element={<PropertyDetail />}
-          />
+        {/* Property Investments — single listing / invest page.
+            Add a matching PROPERTY_DETAIL entry to constants/routes.js
+            if you'd rather reference it as ROUTES.PROPERTY_DETAIL than
+            the literal path below. */}
+        <Route
+          path={ROUTES.PROPERTY_DETAIL || "/dashboard/properties/:slug"}
+          element={<PropertyDetail />}
+        />
 
-          {/* Investment Funds — marketplace grid */}
-          <Route
-            path={ROUTES.DASHBOARD_FUNDS}
-            element={<DashboardFunds />}
-          />
+        {/* Investment Funds — marketplace grid */}
+        <Route
+          path={ROUTES.DASHBOARD_FUNDS}
+          element={<DashboardFunds />}
+        />
 
-          {/* Investment Funds — single fund detail / invest page.
-              Same pattern as PropertyDetail above: FundDetails.jsx
-              reads :slug via useParams() and looks it up in
-              data/funds.js. Add ROUTES.FUND_DETAIL to
-              constants/routes.js if you'd rather reference it by name
-              than the literal fallback path below — Funds.jsx's
-              "VIEW FUND" button already checks for that same constant. */}
-          <Route
-            path={ROUTES.FUND_DETAIL || "/dashboard/funds/:slug"}
-            element={<FundDetails />}
-          />
+        {/* Investment Funds — single fund detail / invest page.
+            Same pattern as PropertyDetail above. Add ROUTES.FUND_DETAIL
+            to constants/routes.js if you'd rather reference it by name
+            than the literal fallback path below — Funds.jsx's
+            "VIEW FUND" button already checks for that same constant. */}
+        <Route
+          path={ROUTES.FUND_DETAIL || "/dashboard/funds/:slug"}
+          element={<FundDetails />}
+        />
 
-          {/* Token Exchange */}
-          <Route
-            path={ROUTES.DASHBOARD_EXCHANGE}
-            element={<DashboardExchange />}
-          />
+        {/* Token Exchange */}
+        <Route
+          path={ROUTES.DASHBOARD_EXCHANGE}
+          element={<DashboardExchange />}
+        />
 
-          {/* Wallet */}
-          <Route
-            path={ROUTES.DASHBOARD_WALLET}
-            element={<DashboardWallet />}
-          />
+        {/* Wallet */}
+        <Route
+          path={ROUTES.DASHBOARD_WALLET}
+          element={<DashboardWallet />}
+        />
 
-          {/* Transactions */}
-          <Route
-            path={ROUTES.DASHBOARD_TRANSACTIONS}
-            element={<Transactions />}
-          />
+        {/* Transactions */}
+        <Route
+          path={ROUTES.DASHBOARD_TRANSACTIONS}
+          element={<Transactions />}
+        />
 
-          {/* User Profile / KYC */}
-          <Route
-            path={ROUTES.DASHBOARD_PROFILE}
-            element={<Profile />}
-          />
+        {/* User Profile / KYC */}
+        <Route
+          path={ROUTES.DASHBOARD_PROFILE}
+          element={<Profile />}
+        />
 
+        {/* Referral Program */}
+        <Route
+          path={ROUTES.DASHBOARD_REFERRALS}
+          element={<Referrals />}
+        />
 
-
-
-
-          {/* Referral Program */}
-          <Route
-            path={ROUTES.DASHBOARD_REFERRALS}
-            element={<Referrals />}
-          />
-
-          {/* Account Settings */}
-          <Route
-            path={ROUTES.DASHBOARD_SETTINGS}
-            element={<Settings />}
-          />
-        </Route>
-      {/* </Route> */}
+        {/* Account Settings */}
+        <Route
+          path={ROUTES.DASHBOARD_SETTINGS}
+          element={<Settings />}
+        />
+      </Route>
 
       {/* ============================================================
           404 FALLBACK

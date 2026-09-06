@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 
 // components
-import Navbar from "../../pages/dashboard/Navbar";
+import Navbar from "../../layouts/DashboardNavbar";
 import Pagination from "../../components/ui/Pagination";
 import heroBg from "../../../public/images/dashboard-hero-bg.png";
 import axis3d from "../../../public/images/axis-3d.svg";

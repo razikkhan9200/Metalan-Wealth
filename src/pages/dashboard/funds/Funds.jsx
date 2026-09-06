@@ -1,10 +1,14 @@
-/* pages/funds/Funds.jsx: application source file. Expert-managed capital funds marketplace. */
+/* pages/dashboard/funds/Funds.jsx: application source file. Expert-managed capital funds marketplace. */
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
-import Navbar from "../../layouts/DashboardNavbar";
-import Text from "../../components/ui/Text";
+import Navbar from "../../../layouts/DashboardNavbar";
+import Text from "../../../components/ui/Text";
+import Button from "../../../components/ui/Button";
+import { ROUTES } from "../../../constants/routes";
+import { FUNDS } from "../../../data/funds";
 
-import heroBg from "../../../public/images/funds-hero.png";
+import heroBg from "../../../../public/images/funds-hero.png";
 
 // Shared brand colors — same values used across Login/Dashboard/Property
 // so this page's palette stays identical rather than drifting if edited
@@ -17,92 +21,6 @@ const GOLD = "#e8b46a";
 // works as the no-op option in the Property page's location filter.
 const CATEGORIES = ["All Funds", "Real Estate", "Forex", "Mixed Allocation", "High Yield"];
 
-// The funds on offer. `category` drives the filter pills above the
-// grid; `risk` is shown as a badge on the card (styling is the same
-// for every risk tier by design — see FundCard — it's informational,
-// not color-coded). `barTrend` is a small set of relative bar heights
-// (0–1) for the decorative sparkline, with the last value always meant
-// to read as the "current" period and rendered in gold.
-//
-// NOTE: category assignments here are a reasonable mapping from each
-// fund's description (e.g. a hospitality real-estate syndicate is
-// filed under "Real Estate"), not values pulled from a real backend —
-// swap this whole array for an API response once fund data is live.
-const FUNDS = [
-  {
-    id: "re-growth",
-    name: "Metalan Real Estate Growth Fund",
-    manager: "Sarah Jenkins",
-    risk: "Moderate",
-    category: "Real Estate",
-    netAum: "$12.4M",
-    currentNav: "F125.40",
-    yield1y: 18.4,
-    minFaix: 500,
-    barTrend: [0.4, 0.5, 0.45, 0.55, 0.6, 0.7, 0.8],
-  },
-  {
-    id: "forex-yield",
-    name: "Global Forex Yield Index Fund",
-    manager: "Pierre Dubois",
-    risk: "High Risk",
-    category: "Forex",
-    netAum: "$24.1M",
-    currentNav: "F98.10",
-    yield1y: 22.1,
-    minFaix: 500,
-    barTrend: [0.35, 0.4, 0.5, 0.45, 0.6, 0.65, 0.85],
-  },
-  {
-    id: "sovereign-shield",
-    name: "Sovereign Bond Sovereign Shield",
-    manager: "Alistair Sterling",
-    risk: "Low Risk",
-    category: "Mixed Allocation",
-    netAum: "$45.0M",
-    currentNav: "F105.00",
-    yield1y: 6.8,
-    minFaix: 500,
-    barTrend: [0.4, 0.42, 0.4, 0.45, 0.48, 0.5, 0.55],
-  },
-  {
-    id: "hospitality-syndicate",
-    name: "Luxury Hospitality Syndicate",
-    manager: "Yuki Tanaka",
-    risk: "Moderate",
-    category: "Real Estate",
-    netAum: "$8.9M",
-    currentNav: "F150.20",
-    yield1y: 14.2,
-    minFaix: 500,
-    barTrend: [0.3, 0.4, 0.5, 0.55, 0.5, 0.6, 0.75],
-  },
-  {
-    id: "multi-strategy",
-    name: "Metalan Multi-Strategy Liquid Fund",
-    manager: "Arjun Mehta",
-    risk: "Moderate",
-    category: "Mixed Allocation",
-    netAum: "$18.5M",
-    currentNav: "F112.50",
-    yield1y: 15.9,
-    minFaix: 500,
-    barTrend: [0.35, 0.45, 0.5, 0.5, 0.6, 0.65, 0.78],
-  },
-  {
-    id: "tech-vc",
-    name: "Tech token VC Yield Fund",
-    manager: "Zack Snyder",
-    risk: "High Risk",
-    category: "High Yield",
-    netAum: "$31.2M",
-    currentNav: "F210.40",
-    yield1y: 29.4,
-    minFaix: 500,
-    barTrend: [0.3, 0.35, 0.45, 0.5, 0.65, 0.7, 0.9],
-  },
-];
-
 // Curated leaderboard for the sidebar. Deliberately a separate, hand-
 // picked list rather than "top 3 of FUNDS by yield1y" — it references
 // underlying sub-strategies (e.g. "Tech Token VC Pool") that don't map
@@ -114,7 +32,19 @@ const TOP_PERFORMING_FUNDS = [
   { name: "Metalan RE Growth", change: "+18.4%" },
 ];
 
+/**
+ * Builds `/dashboard/funds/:slug` for a given fund. Centralized here
+ * (rather than inlined at each call site) so there's exactly one place
+ * to update if the URL shape ever changes, matching how
+ * ROUTES.PROPERTY_DETAIL is used as a fallback-able constant in
+ * AppRoutes.jsx for the equivalent property route.
+ */
+function fundDetailPath(slug) {
+  return (ROUTES.FUND_DETAIL || "/dashboard/funds/:slug").replace(":slug", slug);
+}
+
 export default function Funds() {
+  const navigate = useNavigate();
   const [category, setCategory] = useState("All Funds");
 
   const visibleFunds = useMemo(
@@ -136,10 +66,6 @@ export default function Funds() {
       <main className="mx-auto max-w-7xl px-4 pt-6 sm:px-6 lg:px-10">
         {/* ============================================================
             HERO BANNER
-            Same photo-plus-gradient-scrim pattern as Dashboard/Property:
-            the abstract data-visualization photo sits behind a dark
-            scrim so the heading/copy stay legible regardless of which
-            part of the image lands under the text.
         ============================================================ */}
         <div className="relative overflow-hidden rounded-3xl border border-white/5">
           <div
@@ -172,10 +98,6 @@ export default function Funds() {
         ============================================================ */}
         <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">
-            {/* Category pills: unlike Property's dropdown filters, this
-                page's source design uses a single-select pill row, so
-                that's what's reproduced here rather than forcing the
-                same dropdown pattern onto a different design. */}
             <div className="flex flex-wrap gap-2.5">
               {CATEGORIES.map((option) => {
                 const isActive = option === category;
@@ -202,7 +124,11 @@ export default function Funds() {
             {visibleFunds.length > 0 ? (
               <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2">
                 {visibleFunds.map((fund) => (
-                  <FundCard key={fund.id} fund={fund} />
+                  <FundCard
+                    key={fund.slug}
+                    fund={fund}
+                    onViewFund={() => navigate(fundDetailPath(fund.slug))}
+                  />
                 ))}
               </div>
             ) : (
@@ -241,10 +167,6 @@ export default function Funds() {
               </ul>
             </div>
 
-            {/* Allocation tip: filled emerald background (not just a
-                bordered card, unlike the other sidebar panels) so it
-                reads as an editorial callout rather than another data
-                widget. */}
             <div
               className="rounded-2xl border p-5"
               style={{ borderColor: `${GOLD}66`, background: `${ACCENT}55` }}
@@ -267,14 +189,12 @@ export default function Funds() {
 }
 
 /**
- * One fund's card: name/manager, a risk badge, the AUM/NAV/yield row,
- * a small decorative trend bar chart, minimum investment, and a CTA.
- *
- * Pure presentation over a single `fund` object — no internal state —
- * so it's easy to reuse elsewhere (e.g. a "my funds" holdings page)
- * without dragging along the grid/filter logic from the parent.
+ * One fund's card. `onViewFund` is called (not a bare `<Link>`) so the
+ * parent decides how navigation happens — currently `navigate()` from
+ * react-router, but this keeps the card itself router-agnostic if it's
+ * ever reused somewhere that navigates differently.
  */
-function FundCard({ fund }) {
+function FundCard({ fund, onViewFund }) {
   return (
     <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5 transition-colors hover:border-white/20">
       <div className="flex items-start justify-between gap-3">
@@ -285,9 +205,6 @@ function FundCard({ fund }) {
           <p className="mt-1 text-xs text-white/40">Managed by {fund.manager}</p>
         </div>
 
-        {/* Risk badge: same styling regardless of risk tier in the
-            source design — it's a label, not a severity indicator, so
-            resist the temptation to color-code it red/amber/green. */}
         <span className="shrink-0 rounded-md bg-emerald-400/10 px-2.5 py-1 text-[11px] font-semibold text-emerald-300 ring-1 ring-emerald-400/30">
           {fund.risk}
         </span>
@@ -300,7 +217,9 @@ function FundCard({ fund }) {
         </div>
         <div>
           <p className="text-[11px] text-white/40">CURRENT NAV</p>
-          <p className="mt-0.5 font-mono text-sm font-semibold text-white">{fund.currentNav}</p>
+          <p className="mt-0.5 font-mono text-sm font-semibold text-white">
+            F{fund.currentNav.toFixed(2)}
+          </p>
         </div>
         <div className="text-right">
           <p className="text-[11px] text-white/40">1Y YIELD</p>
@@ -314,13 +233,15 @@ function FundCard({ fund }) {
 
       <div className="mt-4 flex items-center justify-between">
         <p className="text-xs text-white/40">Min: F {fund.minFaix} FAIX</p>
-        <button
-          type="button"
-          className="rounded-lg border px-4 py-2 text-xs font-semibold text-[#e8b46a] transition-colors hover:bg-white/5"
-          style={{ borderColor: `${GOLD}99` }}
-        >
-          VIEW FUND
-        </button>
+       <Button
+  type="button"
+  variant="outline"
+  size="sm"
+  onClick={onViewFund}
+  className="!border-[#e8b46a99] !text-xs !font-semibold !text-[#e8b46a] hover:!bg-white/5"
+>
+  VIEW FUND
+</Button>
       </div>
     </div>
   );
@@ -328,14 +249,8 @@ function FundCard({ fund }) {
 
 /**
  * Small decorative bar row used as a stand-in for a real performance
- * sparkline. Every bar but the last renders in the muted brand-green;
- * the last one is gold, reading as "current period" against the
- * trailing history — matching the reference design's convention across
- * every fund card regardless of that fund's actual trend.
- *
- * `values` are relative heights from 0–1; this component doesn't fetch
- * or compute anything, so swapping in a real NAV-history series later
- * is a matter of passing different numbers in, not rewriting this.
+ * sparkline. `values` are relative heights from 0–1; swapping in a real
+ * NAV-history series later is a matter of passing different numbers in.
  */
 function MiniBarChart({ values }) {
   return (
