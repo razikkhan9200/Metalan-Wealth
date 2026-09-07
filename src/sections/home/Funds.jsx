@@ -105,25 +105,25 @@ export default function Funds() {
 
       <div className="absolute inset-0 bg-[#0A0A0A]/90" />
 
-      <div className="relative z-10 mx-auto w-full max-w-[1440px] px-6 py-[80px] lg:px-[80px]">
+      <div className="relative z-10 mx-auto w-full max-w-[1440px] px-4 py-14 sm:px-6 sm:py-16 lg:px-[80px] lg:py-[80px]">
         <div className="w-full">
-          <h2 className="funds-heading font-['Instrument_Serif'] text-[48px] font-normal leading-[1.05] tracking-normal text-[#FFFFFF]">
+          <h2 className="funds-heading font-['Instrument_Serif'] text-[34px] font-normal leading-[1.05] tracking-normal text-[#FFFFFF] sm:text-[40px] lg:text-[48px]">
             Expert-Managed Funds — Forex, Real Estate & Beyond
           </h2>
 
-          <p className="funds-description mt-[14px] text-[16px] leading-[1.5] text-[#8F9A96]">
+          <p className="funds-description mt-[14px] max-w-[800px] text-[14px] leading-[1.5] text-[#8F9A96] sm:text-[15px] lg:text-[16px]">
             Secure passive growth via automated indices curated by our tier-1
             asset management desks.
           </p>
         </div>
 
-        <div className="mt-[40px] grid grid-cols-1 gap-[16px] lg:grid-cols-3">
+       <div className="mt-8 grid grid-cols-1 gap-4 sm:mt-10 lg:mt-[40px] lg:grid-cols-3">
           {funds.map((fund) => (
             <div
               key={fund.title}
-              className="fund-card h-[370px] w-full rounded-[20px] border border-[#D4A853]/25 bg-[#121614]/[0.8784] p-[24px]"
+              className="fund-card h-auto min-h-[370px] w-full rounded-[20px] border border-[#D4A853]/25 bg-[#121614]/[0.8784] p-5 sm:p-[24px] lg:h-[370px]"
             >
-              <h3 className="font-['Instrument_Serif'] text-[23px] font-normal leading-[1.15] text-[#FFFFFF]">
+              <h3 className="font-['Instrument_Serif'] text-[21px] font-normal leading-[1.15] text-[#FFFFFF] sm:text-[23px]">
                 {fund.title}
               </h3>
 
@@ -201,7 +201,7 @@ export default function Funds() {
           ))}
         </div>
 
-        <div className="fund-comparison mt-[39px] w-full rounded-[16px] border border-white/[0.08] bg-[#121614]/80 px-[16px] py-[17px]">
+        <div className="fund-comparison mt-8 w-full rounded-[16px] border border-white/[0.08] bg-[#121614]/80 px-4 py-4 sm:mt-[39px] sm:px-[16px] sm:py-[17px]">
           <h3 className="font-['Instrument_Serif'] text-[18px] font-normal text-[#D4A853]">
             Fund Comparison Index
           </h3>
