@@ -92,26 +92,26 @@ export default function FaixEcosystem() {
       ref={sectionRef}
       className="relative min-h-[720px] overflow-hidden bg-[#0A0A0A] text-white"
     >
-      <div className="mx-auto w-full max-w-[1440px] px-[80px] py-[80px]">
-        <h2 className="faix-heading font-['Instrument_Serif'] text-[48px] font-normal leading-[1.05] text-[#FFFFFF]">
+     <div className="mx-auto w-full max-w-[1440px] px-5 py-14 sm:px-6 sm:py-16 lg:px-[80px] lg:py-[80px]">
+        <h2 className="faix-heading font-['Instrument_Serif'] text-[34px] font-normal leading-[1.05] text-[#FFFFFF] sm:text-[40px] lg:text-[48px]">
           FAIX — The Currency of Tokenized Wealth
         </h2>
 
-        <div className="mt-[40px] grid grid-cols-[480px_1fr] items-center gap-[48px]">
-          <div className="relative h-[320px] w-[480px] overflow-hidden rounded-[24px] border-[2px] border-[#D4A853]/25 bg-[#0A0A0A]/50">
+        <div className="mt-8 grid grid-cols-1 items-center gap-8 sm:mt-10 lg:grid-cols-[480px_1fr] lg:gap-[48px]">
+        <div className="relative h-[260px] w-full overflow-hidden rounded-[24px] border-[2px] border-[#D4A853]/25 bg-[#0A0A0A]/50 sm:h-[320px] lg:w-[480px]">
           <img
             src="/images/faix-coin-bg-export.png"
             alt="FAIX token visualization"
             className="h-full w-full object-cover"
             />
 
-            <div className="absolute left-1/2 top-1/2 h-[160px] w-[160px] -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] border-[#D4A853] bg-[#1A3C34]/80 shadow-[0_0_40px_0_#D4A853]" />
+           <div className="absolute left-1/2 top-1/2 h-[120px] w-[120px] -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] border-[#D4A853] bg-[#1A3C34]/80 shadow-[0_0_40px_0_#D4A853] sm:h-[160px] sm:w-[160px]" />
             </div>
 
           <div className="flex flex-col gap-[16px]">
             {details.map((item) => (
               <div key={item.title} className="faix-detail">
-                <h3 className="font-['Instrument_Serif'] text-[17px] font-normal leading-[1.1] text-[#D4A853]">
+               <h3 className="font-['Instrument_Serif'] text-[17px] font-normal leading-[1.1] text-[#D4A853]">
                   {item.title}
                 </h3>
 
@@ -123,7 +123,7 @@ export default function FaixEcosystem() {
           </div>
         </div>
 
-        <div className="mt-[40px] grid grid-cols-2 gap-[16px] md:grid-cols-3 lg:grid-cols-6">
+        <div className="mt-8 grid grid-cols-2 gap-3 sm:mt-[40px] sm:gap-[16px] md:grid-cols-3 lg:grid-cols-6">
           {metrics.map(([label, value]) => (
             <div
               key={label}
@@ -133,7 +133,7 @@ export default function FaixEcosystem() {
                 {label}
               </p>
 
-              <p className="mt-[7px] font-mono text-[18px] font-semibold text-[#D4A853]">
+              <p className="mt-[7px] whitespace-nowrap font-mono text-[14px] font-semibold text-[#D4A853] sm:text-[18px]">
                 {value}
               </p>
             </div>
