@@ -19,7 +19,7 @@ import PlatformFeatures from "../../sections/home/PlatformFeatures";
 import Testimonials from "../../sections/home/Testimonials";
 // import FaixEcosystem from "../../sections/home/FaixEcosystem";
 import PlatformMetrics from "../../sections/home/PlatformMetrics";
-// import HowItWorks from "../../sections/home/HowItWorks";
+import HowItWorks from "../../sections/home/HowItWorks";
 
 export default function Home() {
   return (
@@ -30,7 +30,7 @@ export default function Home() {
       <PlatformFeatures />
       <Testimonials />
       <PlatformMetrics />
-      {/* <HowItWorks /> */}
+      <HowItWorks />
       {/* <FaixEcosystem /> */}
       <section className="border-b border-slate-200 bg-white">
         <Container className="grid gap-4 py-8 sm:grid-cols-3">

@@ -15,11 +15,7 @@ import Hero from "../../sections/home/Hero";
 import Tokenization from "../../sections/home/Tokenization";
 import { ROUTES } from "../../constants/routes";
 import Funds from "../../sections/home/Funds";
-import PlatformFeatures from "../../sections/home/PlatformFeatures";
-import Testimonials from "../../sections/home/Testimonials";
-// import FaixEcosystem from "../../sections/home/FaixEcosystem";
-import PlatformMetrics from "../../sections/home/PlatformMetrics";
-// import HowItWorks from "../../sections/home/HowItWorks";
+import FaixEcosystem from "../../sections/home/FaixEcosystem";
 
 export default function Home() {
   return (
@@ -27,11 +23,7 @@ export default function Home() {
       <Hero />
       <Tokenization />
       <Funds />
-      <PlatformFeatures />
-      <Testimonials />
-      <PlatformMetrics />
-      {/* <HowItWorks /> */}
-      {/* <FaixEcosystem /> */}
+      <FaixEcosystem />
       <section className="border-b border-slate-200 bg-white">
         <Container className="grid gap-4 py-8 sm:grid-cols-3">
           {[
