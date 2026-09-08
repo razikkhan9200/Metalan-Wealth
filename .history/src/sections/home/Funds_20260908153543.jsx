@@ -46,7 +46,7 @@ export default function Funds() {
         scrollTrigger: {
           trigger: sectionRef.current,
           start: "top 75%",
-          toggleActions: "play none play reverse",
+          toggleActions: "play none none none",
         },
         defaults: {
           ease: "power3.out",

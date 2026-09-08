@@ -228,7 +228,7 @@ export default function PlatformMetrics() {
               <img
                 src="/images/Matrics-images/metric.png"
                 alt="Platform metrics"
-                className="h-auto min-h-[620px] w-full object-cover sm:min-h-[630px] lg:h-[580px]"
+                className="h-auto min-h-[620px] w-full object-cover sm:min-h-[600px] lg:h-[580px]"
               />
 
               <div className="absolute inset-0 bg-gradient-to-t from-[#080B09]/35 via-transparent to-transparent" />

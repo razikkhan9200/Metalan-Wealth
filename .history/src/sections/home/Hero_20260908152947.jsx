@@ -1,9 +1,6 @@
 import { Link } from "react-router-dom";
 import { useLayoutEffect, useRef } from "react";
 import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-
-gsap.registerPlugin(ScrollTrigger);
 
 export default function Hero() {
   const heroRef = useRef(null);
@@ -11,12 +8,6 @@ export default function Hero() {
   useLayoutEffect(() => {
     const ctx = gsap.context(() => {
       const tl = gsap.timeline({
-        scrollTrigger: {
-          trigger: heroRef.current,
-          start: "top top",
-          end: "bottom top",
-          toggleActions: "play none play reverse",
-        },
         defaults: {
           ease: "power3.out",
         },
@@ -74,7 +65,7 @@ export default function Hero() {
         <div
           className="absolute bottom-0 left-0 h-[120px] w-full bg-cover bg-center bg-no-repeat"
           style={{
-            backgroundImage: "url('/images/Hero-images/hero-section-lower.png')",
+            backgroundImage: "url('/images/hero-section-lower.png')",
           }}
         />
 

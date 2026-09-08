@@ -39,20 +39,24 @@ select {
 button {
   cursor: pointer;
 }
-html {
+.custom-scrollbar {
   scrollbar-width: thin;
   scrollbar-color: #D4A853 #0A0A0A;
 }
 
-html::-webkit-scrollbar {
+.custom-scrollbar::-webkit-scrollbar {
   width: 6px;
 }
 
-html::-webkit-scrollbar-track {
+.custom-scrollbar::-webkit-scrollbar-track {
   background: #0A0A0A;
 }
 
-html::-webkit-scrollbar-thumb {
+.custom-scrollbar::-webkit-scrollbar-thumb {
   background: #D4A853;
   border-radius: 999px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #B87333;
 }

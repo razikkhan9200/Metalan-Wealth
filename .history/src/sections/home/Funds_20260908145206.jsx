@@ -8,7 +8,7 @@ const funds = [
   {
     title: "Metalan Real Estate Growth Fund",
     manager: "Sarah Chen, CFA",
-    avatar: "/images/Funds-images/mgr-avatar-1.png",
+    avatar: "/images/mgr-avatar-1.png",
     returnValue: "18.4% 1Y",
     aum: "$12.4M",
     risk: "Moderate",
@@ -18,7 +18,7 @@ const funds = [
   {
     title: "Global Forex Alpha Fund",
     manager: "James Robertson",
-    avatar: "/images/Funds-images/mgr-avatar-2.png",
+    avatar: "/images/mgr-avatar-2.png",
     returnValue: "24.1% 1Y",
     aum: "$8.7M",
     risk: "High",
@@ -28,7 +28,7 @@ const funds = [
   {
     title: "Stable Income Fund",
     manager: "Priya Sharma",
-    avatar: "/images/Funds-images/mgr-avatar-3.png",
+    avatar: "/images/mgr-avatar-3.png",
     returnValue: "9.2% 1Y",
     aum: "$22.1M",
     risk: "Low",
@@ -46,7 +46,7 @@ export default function Funds() {
         scrollTrigger: {
           trigger: sectionRef.current,
           start: "top 75%",
-          toggleActions: "play none play reverse",
+          toggleActions: "play none none none",
         },
         defaults: {
           ease: "power3.out",
@@ -99,7 +99,7 @@ export default function Funds() {
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{
-          backgroundImage: "url('/images/Funds-images/funds-bg-export.png')",
+          backgroundImage: "url('/images/funds-bg-export.png')",
         }}
       />
 

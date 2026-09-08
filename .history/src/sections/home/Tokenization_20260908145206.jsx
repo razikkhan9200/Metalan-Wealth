@@ -31,74 +31,74 @@ export default function Tokenization() {
   ];
 
   useLayoutEffect(() => {
-  const ctx = gsap.context(() => {
-    const tl = gsap.timeline({
-      scrollTrigger: {
-        trigger: sectionRef.current,
-        start: "top 75%",
-        toggleActions: "play none play reverse",
-      },
-      defaults: {
-        ease: "power3.out",
-      },
-    });
+    const ctx = gsap.context(() => {
+      const tl = gsap.timeline({
+        scrollTrigger: {
+          trigger: sectionRef.current,
+          start: "top 75%",
+          toggleActions: "play none none none",
+        },
+        defaults: {
+          ease: "power3.out",
+        },
+      });
 
-    tl.from(".tokenization-heading", {
-      y: 35,
-      opacity: 0,
-      duration: 0.8,
-    })
-      .from(
-        ".tokenization-description",
-        {
-          y: 20,
-          opacity: 0,
-          duration: 0.7,
-        },
-        "-=0.45"
-      )
-      .from(
-        ".tokenization-visual",
-        {
-          x: -30,
-          opacity: 0,
-          duration: 0.8,
-        },
-        "-=0.35"
-      )
-      .from(
-        ".tokenization-step",
-        {
-          x: 25,
-          opacity: 0,
-          duration: 0.6,
-          stagger: 0.1,
-        },
-        "-=0.5"
-      )
-      .from(
-        ".tokenization-card",
-        {
-          x: 30,
-          opacity: 0,
-          duration: 0.8,
-        },
-        "-=0.5"
-      )
-      .from(
-        ".tokenization-benefit",
-        {
-          y: 20,
-          opacity: 0,
-          duration: 0.6,
-          stagger: 0.1,
-        },
-        "-=0.4"
-      );
-  }, sectionRef);
+      tl.from(".tokenization-heading", {
+        y: 40,
+        opacity: 0,
+        duration: 0.9,
+      })
+        .from(
+          ".tokenization-description",
+          {
+            y: 25,
+            opacity: 0,
+            duration: 0.7,
+          },
+          "-=0.5"
+        )
+        .from(
+          ".tokenization-main",
+          {
+            y: 30,
+            opacity: 0,
+            duration: 0.8,
+          },
+          "-=0.4"
+        )
+        .from(
+          ".tokenization-step",
+          {
+            y: 20,
+            opacity: 0,
+            duration: 0.6,
+            stagger: 0.1,
+          },
+          "-=0.5"
+        )
+        .from(
+          ".tokenization-card",
+          {
+            y: 25,
+            opacity: 0,
+            duration: 0.8,
+          },
+          "-=0.6"
+        )
+        .from(
+          ".tokenization-benefit",
+          {
+            y: 20,
+            opacity: 0,
+            duration: 0.6,
+            stagger: 0.1,
+          },
+          "-=0.5"
+        );
+    }, sectionRef);
 
-  return () => ctx.revert();
-}, []);
+    return () => ctx.revert();
+  }, []);
 
   return (
     <section
@@ -108,7 +108,7 @@ export default function Tokenization() {
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{
-         backgroundImage: "url('/images/Tokenization-Images/tokenization-bg-export.png')",
+          backgroundImage: "url('/images/tokenization-bg-export.png')",
         }}
       />
 
@@ -128,11 +128,11 @@ export default function Tokenization() {
           </p>
 
           <div className="tokenization-main mt-8 grid grid-cols-1 items-start gap-8 sm:mt-10 lg:grid-cols-2 lg:gap-8 xl:mt-10 xl:grid-cols-[370px_minmax(0,420px)_440px] xl:gap-10">
-            <div className="tokenization-visual h-[320px] w-full overflow-hidden rounded-[24px] bg-[#121614] sm:h-[400px] lg:h-[480px] lg:w-[370px]">
+            <div className="h-[320px] w-full overflow-hidden rounded-[24px] bg-[#121614] sm:h-[400px] lg:h-[480px] lg:w-[370px]">
               <img
-                src="/images/Tokenization-Images/isometric-visual.png"
+                src="/images/isometric-visual.png"
                 alt="Premium real estate"
-                className="h-full w-full object-cover"
+                className="h-full w-full oacbject-cover"
               />
             </div>
 
@@ -162,7 +162,7 @@ export default function Tokenization() {
           <div className="tokenization-card h-auto min-h-[430px] w-full max-w-full rounded-[24px] border border-[#D4A853] bg-[#121614]/[0.8784] p-5 shadow-[0_4px_24px_0_#D4A853] sm:p-[24px] lg:col-span-2 xl:col-span-1 xl:h-[430px] xl:w-[440px]">
               <div className="h-[150px] w-full overflow-hidden rounded-[12px] bg-[#121614]">
                 <img
-                  src="/images/Tokenization-Images/card-img.png"
+                  src="/images/card-img.png"
                   alt="Marina Bay Tower, Dubai"
                   className="h-full w-full object-cover"
                 />

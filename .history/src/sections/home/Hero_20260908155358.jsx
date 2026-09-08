@@ -8,56 +8,56 @@ gsap.registerPlugin(ScrollTrigger);
 export default function Hero() {
   const heroRef = useRef(null);
 
-  useLayoutEffect(() => {
-    const ctx = gsap.context(() => {
-      const tl = gsap.timeline({
-        scrollTrigger: {
-          trigger: heroRef.current,
-          start: "top top",
-          end: "bottom top",
-          toggleActions: "play none play reverse",
-        },
-        defaults: {
-          ease: "power3.out",
-        },
-      });
+ useLayoutEffect(() => {
+  const ctx = gsap.context(() => {
+    const tl = gsap.timeline({
+      scrollTrigger: {
+        trigger: heroRef.current,
+        start: "top top",
+        end: "bottom top",
+        toggleActions: "play none play reverse",
+      },
+      defaults: {
+        ease: "power3.out",
+      },
+    });
 
-      tl.from(".hero-heading", {
-        y: 45,
-        opacity: 0,
-        duration: 1,
-      })
-        .from(
-          ".hero-description",
-          {
-            y: 25,
-            opacity: 0,
-            duration: 0.8,
-          },
-          "-=0.6"
-        )
-        .from(
-          ".hero-buttons",
-          {
-            y: 20,
-            opacity: 0,
-            duration: 0.7,
-          },
-          "-=0.5"
-        )
-        .from(
-          ".hero-stats",
-          {
-            y: 15,
-            opacity: 0,
-            duration: 0.7,
-          },
-          "-=0.4"
-        );
-    }, heroRef);
+    tl.from(".hero-heading", {
+      y: 45,
+      opacity: 0,
+      duration: 1,
+    })
+      .from(
+        ".hero-description",
+        {
+          y: 25,
+          opacity: 0,
+          duration: 0.8,
+        },
+        "-=0.6"
+      )
+      .from(
+        ".hero-buttons",
+        {
+          y: 20,
+          opacity: 0,
+          duration: 0.7,
+        },
+        "-=0.5"
+      )
+      .from(
+        ".hero-stats",
+        {
+          y: 15,
+          opacity: 0,
+          duration: 0.7,
+        },
+        "-=0.4"
+      );
+  }, heroRef);
 
-    return () => ctx.revert();
-  }, []);
+  return () => ctx.revert();
+}, []);
 
   return (
         <section

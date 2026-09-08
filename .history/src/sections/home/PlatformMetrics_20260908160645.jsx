@@ -221,14 +221,14 @@ export default function PlatformMetrics() {
             </div>
           </div>
 
-          <div className="metrics-visual relative mx-auto w-full max-w-[520px]">
+          <div className="metrics-visual relative mx-auto w-full max-w-[540px]">
             <div className="absolute -inset-4 rounded-[32px] bg-[#D4A853]/[0.04] blur-2xl" />
 
             <div className="relative overflow-hidden rounded-[24px] border border-[#D4A853]/70 bg-[#101412]">
               <img
                 src="/images/Matrics-images/metric.png"
                 alt="Platform metrics"
-                className="h-auto min-h-[620px] w-full object-cover sm:min-h-[630px] lg:h-[580px]"
+                className="h-auto min-h-[620px] w-full object-cover sm:min-h-[400px] lg:h-[580px]"
               />
 
               <div className="absolute inset-0 bg-gradient-to-t from-[#080B09]/35 via-transparent to-transparent" />

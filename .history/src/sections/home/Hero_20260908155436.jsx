@@ -60,6 +60,12 @@ export default function Hero() {
   }, []);
 
   return (
+    <section ref={heroRef}>
+      {/* tumhara existing Hero JSX */}
+    </section>
+  );
+}
+  return (
         <section
           ref={heroRef}
         className="relative min-h-[800px] overflow-hidden bg-[#0A0A0A] text-white sm:min-h-[900px] lg:h-[1016px] lg:min-h-0"
