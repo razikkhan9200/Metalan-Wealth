@@ -1,5 +1,5 @@
 /* pages/dashboard/property/Property.jsx: application source file. Tokenized real estate marketplace. */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 // React Router
 import { Link } from "react-router-dom";
@@ -14,7 +14,9 @@ import Text from "../../../components/ui/Text";
 import { PROPERTIES } from "../../../data/properties";
 
 // Images
-import heroBg from "../../../../public/images/hero-banner.png";
+
+// Images
+import heroBg from "../../../../public/images/Dashboard-Property-images/hero-banner.png";
 
 // Shared brand colors — same values used across Login/Dashboard so this
 // page's palette stays identical rather than drifting if edited alone.
@@ -370,29 +372,105 @@ function SyndicateCard({ property }) {
  * "Sort by" control, which sits alone on the right side of the filter
  * bar rather than grouped with the others on the left.
  */
+// function FilterDropdown({ label, value, options, onChange, align = "left" }) {
+//   return (
+//     <label
+//       className={
+//         "flex items-center gap-2 rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs " +
+//         (align === "right" ? "sm:flex-row-reverse" : "")
+//       }
+//     >
+//       <span className="whitespace-nowrap text-white/40">{label}:</span>
+//       <span className="relative flex items-center">
+//         <select
+//           value={value}
+//           onChange={(event) => onChange(event.target.value)}
+//           className="appearance-none bg-transparent pr-4 font-semibold text-white outline-none"
+//         >
+//           {options.map((option) => (
+//             <option key={option} value={option} className="bg-[#121614] text-white">
+//               {option}
+//             </option>
+//           ))}
+//         </select>
+//         <ChevronDown size={12} className="pointer-events-none absolute right-0 text-white/40" />
+//       </span>
+//     </label>
+//   );
+// }
+
 function FilterDropdown({ label, value, options, onChange, align = "left" }) {
-  return (
-    <label
-      className={
-        "flex items-center gap-2 rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs " +
-        (align === "right" ? "sm:flex-row-reverse" : "")
+  const [open, setOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target)
+      ) {
+        setOpen(false);
       }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  return (
+    <div
+      ref={dropdownRef}
+      className="relative"
     >
-      <span className="whitespace-nowrap text-white/40">{label}:</span>
-      <span className="relative flex items-center">
-        <select
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-          className="appearance-none bg-transparent pr-4 font-semibold text-white outline-none"
+          <button
+        type="button"
+        onClick={() => setOpen((previous) => !previous)}
+       className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-black/30 px-3 py-1.5 !text-[12px] text-white transition-colors hover:border-white/20"
+      >
+        <span className="whitespace-nowrap !text-[12px] text-white/40">
+          {label}:
+        </span>
+
+        <span className="flex items-center gap-1 font-medium">
+          {value}
+
+          <ChevronDown
+            size={10}
+            className={`text-white/40 transition-transform ${
+              open ? "rotate-180" : ""
+            }`}
+          />
+        </span>
+      </button>
+      {open && (
+        <div
+          className={
+            "absolute top-full z-50 mt-2 min-w-full overflow-hidden rounded-xl border border-white/10 bg-[#121614] p-1 shadow-[0_12px_30px_rgba(0,0,0,0.45)] " +
+            (align === "right" ? "right-0" : "left-0")
+          }
         >
           {options.map((option) => (
-            <option key={option} value={option} className="bg-[#121614] text-white">
+            <button
+              key={option}
+              type="button"
+              onClick={() => {
+                onChange(option);
+                setOpen(false);
+              }}
+              className={`block w-full rounded-md px-2.5 py-1.5 text-left !text-[13px] font-normal transition-colors ${
+                option === value
+                  ? "bg-[#1A3C34] text-[#e8b46a]"
+                  : "text-white/70 hover:bg-white/5 hover:text-white"
+              }`}
+            >
               {option}
-            </option>
+            </button>
           ))}
-        </select>
-        <ChevronDown size={12} className="pointer-events-none absolute right-0 text-white/40" />
-      </span>
-    </label>
+        </div>
+      )}
+    </div>
   );
 }

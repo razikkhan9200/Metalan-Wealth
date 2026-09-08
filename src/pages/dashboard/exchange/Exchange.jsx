@@ -9,7 +9,8 @@ import Navbar from "../../../layouts/DashboardNavbar";
 import Text from "../../../components/ui/Text";
 
 // Images
-import coreArchitectureBg from "../../../../public/images/abstract-bg.png";
+
+import coreArchitectureBg from "../../../../public/images/Dashboard-Exchange-Images/abstract-bg.png";
 
 // Shared brand colors — same values used across Dashboard/Funds/Property
 // so this page's palette stays identical rather than drifting if edited

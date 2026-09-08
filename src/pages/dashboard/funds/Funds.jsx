@@ -14,7 +14,8 @@ import { ROUTES } from "../../../constants/routes";
 import { FUNDS } from "../../../data/funds";
 
 // Images
-import heroBg from "../../../../public/images/funds-hero.png";
+// import heroBg from "../../../../public/images/funds-hero.png";
+import heroBg from "../../../../public/images/Dashboard-Funds-images/funds-hero.png";
 
 // Shared brand colors — same values used across Login/Dashboard/Property
 // so this page's palette stays identical rather than drifting if edited

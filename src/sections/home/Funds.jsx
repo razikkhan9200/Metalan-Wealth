@@ -4,7 +4,10 @@ import { useMemo, useState } from "react";
 import Navbar from "../../layouts/DashboardNavbar";
 import Text from "../../components/ui/Text";
 
-import heroBg from "../../../public/images/funds-hero.png";
+// import heroBg from "../../../public/images/funds-hero.png";
+
+import heroBg from "../../../public/images/Dashboard-Funds-images/funds-hero.png";
+
 
 // Shared brand colors — same values used across Login/Dashboard/Property
 // so this page's palette stays identical rather than drifting if edited

@@ -309,6 +309,8 @@ import {
   updateProfile,
 } from "../../../services/UserService";
 
+import { toast } from "../../../utils/toast";
+
 const ACCENT = "#1A3C34";
 const GOLD = "#e8b46a";
 
@@ -595,8 +597,11 @@ function ProfilePanelContent({ onClose }) {
     setError(null);
 
     try {
-      const updated =
-        await updateProfile(form);
+      const updated = await toast.promise(updateProfile(form), {
+        loading: "Saving your changes...",
+        success: "Profile updated.",
+        error: (err) => err?.message || "Couldn't save your changes. Please try again.",
+      });
 
       setProfile((previous) => ({
         ...previous,
@@ -605,6 +610,8 @@ function ProfilePanelContent({ onClose }) {
 
       onClose();
     } catch (err) {
+      // toast.promise already surfaced this; also mirror it inline
+      // on the panel for anyone who missed the toast.
       setError(
         err?.message ||
           "Couldn't save your changes. Please try again."
@@ -650,12 +657,13 @@ function ProfilePanelContent({ onClose }) {
       ================================================= */}
 
       <div
-        ref={panelRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="profile-panel-title"
-        tabIndex={-1}
+          ref={panelRef}
+        onWheel={(e) => {
+          e.stopPropagation();
+          panelRef.current.scrollTop += e.deltaY;
+        }}
         className="
+          profile-scroll
           relative
           z-10
           flex
@@ -664,12 +672,11 @@ function ProfilePanelContent({ onClose }) {
           w-full
           max-w-md
           flex-col
-          overflow-hidden
+          overflow-y-auto
           border-l
           border-white/10
           bg-[#121212]
           outline-none
-          shadow-[-40px_0_90px_-15px_rgba(0,0,0,0.85)]
         "
       >
         {/* =================================================
@@ -790,14 +797,8 @@ function ProfilePanelContent({ onClose }) {
           <form
             onSubmit={handleSave}
             className="
-              min-h-0
-              flex-1
-              overflow-x-hidden
-              overflow-y-auto
-              overscroll-contain
               px-6
-              pb-8
-              touch-pan-y
+          pb-8
             "
             style={{
               WebkitOverflowScrolling:

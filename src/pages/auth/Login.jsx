@@ -1,3 +1,5 @@
+
+
 /* pages/auth/Login.jsx: application source file. See README.md for the folder responsibility. */
 import { useState } from "react";
 
@@ -14,22 +16,20 @@ import Text from "../../components/ui/Text";
 import { ROUTES } from "../../constants/routes";
 import { setAuthSession } from "../../utils/auth";
 
-// Images
-import loginHeroBg from "../../../public/images/login-hero-bg.png";
+// API
+import { post } from "../../services/Api";
 
+// Toasts
+import { toast } from "../../utils/toast";
+
+// Images
+// import loginHeroBg from "../../../public/images/login-hero-bg.png";
+
+import loginHeroBg from "../../../public/images/Dashboard-Login-Images/login-hero-bg.png";
 // Brand accent color, reused across the gradient logo mark, the focus-ring
 // color of inputs, and the active-tab outline. Centralized here so the
 // whole page's "green" stays in sync if the brand palette ever changes.
 const ACCENT = "#1A3C34";
-
-// The three supported sign-in methods. Each tab id doubles as the `tab`
-// state value and as the key used to decide which field(s) to render below,
-// so keep these ids in sync with the `tab === "..."` checks further down.
-const TABS = [
-  { id: "email", label: "Email" },
-  { id: "username", label: "Username" },
-  { id: "otp", label: "Mobile OTP" },
-];
 
 // Shared overrides so the shared Input/Button primitives (built for the
 // light-theme app shell) render correctly on this dark, photo-backed page.
@@ -43,34 +43,14 @@ const darkInputStyle = { "--tw-ring-color": `${ACCENT}99` };
 // Centralized field-level validation. Kept outside the component so it has
 // no closures over React state and can be unit-tested (or reused by a
 // signup form later) without rendering anything.
-function validateFields(tab, fields) {
+function validateFields(fields) {
   const errors = {};
 
-  if (tab === "email") {
-    if (!fields.email.trim()) {
-      errors.email = "Enter your corporate email address.";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fields.email)) {
-      errors.email = "Enter a valid email address.";
-    }
+  if (!fields.username.trim()) {
+    errors.username = "Enter your username.";
   }
 
-  if (tab === "username") {
-    if (!fields.username.trim()) {
-      errors.username = "Enter your username.";
-    }
-  }
-
-  if (tab === "otp") {
-    if (!fields.mobile.trim()) {
-      errors.mobile = "Enter your mobile number.";
-    } else if (!/^\+?[0-9\s]{7,15}$/.test(fields.mobile)) {
-      errors.mobile = "Enter a valid mobile number.";
-    }
-  }
-
-  // Password is only required for the email/username flows; the OTP flow
-  // authenticates via a code sent to the phone instead of a password.
-  if (tab !== "otp" && !fields.password) {
+  if (!fields.password) {
     errors.password = "Enter your password.";
   }
 
@@ -90,10 +70,6 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Which sign-in method is active. Drives both the tab highlight and
-  // which input field(s) are rendered in the form below.
-  const [tab, setTab] = useState("email");
-
   // Toggles the password field between masked ("password") and
   // plain-text ("text") rendering when the eye icon is clicked.
   const [showPassword, setShowPassword] = useState(false);
@@ -102,15 +78,9 @@ export default function Login() {
   // Disables/animates the submit button so users can't double-submit.
   const [loading, setLoading] = useState(false);
 
-  // A single object holds every possible field across all three tabs
-  // (email, username, mobile, password) rather than one useState per
-  // field. This keeps the component's state surface small and makes it
-  // trivial to serialize the whole form (e.g. for the real API payload)
-  // once the backend is wired up: `JSON.stringify(fields)`.
+  // Username/password are the only fields this form collects.
   const [fields, setFields] = useState({
-    email: "",
     username: "",
-    mobile: "",
     password: "",
   });
 
@@ -138,16 +108,50 @@ export default function Login() {
   /**
    * Handles login form submission.
    *
-   * Validates the fields relevant to the active tab, then currently
-   * simulates an API request using a short delay. After successful
-   * login, the user is redirected to:
+   * Validates the username/password fields, then currently simulates
+   * an API request using a short delay. After successful login, the
+   * user is redirected to:
    * - The previously requested protected route, if available.
    * - Otherwise, the main dashboard.
    */
+  // const handleSubmit = async (event) => {
+  //   event.preventDefault();
+
+  //   const validationErrors = validateFields(fields);
+  //   if (Object.keys(validationErrors).length > 0) {
+  //     setErrors(validationErrors);
+  //     return;
+  //   }
+
+  //   setLoading(true);
+
+  //   try {
+  //     // Temporary API simulation.
+  //     // TODO(auth-integration): replace this delay with a real request,
+  //     // e.g. `await api.post("/auth/login", fields)`, and surface any
+  //     // server-side error into `setErrors` instead of assuming success.
+  //     await new Promise((resolve) => setTimeout(resolve, 500));
+
+  //     // Create the temporary local authentication session.
+  //     setAuthSession();
+
+  //     // Return the user to the originally requested route
+  //     // or redirect them to the dashboard.
+  //     navigate(location.state?.from || ROUTES.DASHBOARD, {
+  //       replace: true,
+  //     });
+  //   } finally {
+  //     // Always clear the loading state, even if the (future) real
+  //     // request throws, so the button doesn't get stuck spinning.
+  //     setLoading(false);
+  //   }
+  // };
+
+
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    const validationErrors = validateFields(tab, fields);
+    const validationErrors = validateFields(fields);
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
       return;
@@ -156,27 +160,48 @@ export default function Login() {
     setLoading(true);
 
     try {
-      // Temporary API simulation.
-      // TODO(auth-integration): replace this delay with a real request,
-      // e.g. `await api.post("/auth/login", { tab, ...fields })`, and
-      // surface any server-side error into `setErrors` instead of
-      // assuming success.
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      // toast.promise puts the waiting / success / failed states on
+      // screen for us: it shows "Signing you in..." immediately, then
+      // flips that SAME toast to the success or error message below
+      // depending on how the request settles.
+      const { data } = await toast.promise(
+        // Real backend call — see services/Api.js (post) and the
+        // backend's POST /api/auth/login route. Throws a real Error
+        // (with .status/.data) on a non-2xx response, e.g. wrong
+        // credentials -> 401 "Invalid username or password".
+        post("/auth/login", {
+          username: fields.username,
+          password: fields.password,
+        }),
+        {
+          loading: "Signing you in...",
+          success: "Welcome back!",
+          // Show the backend's message (e.g. "Invalid username or
+          // password") without guessing which field caused it.
+          error: (error) => error.message || "Unable to sign in. Please try again.",
+        }
+      );
 
-      // Create the temporary local authentication session.
-      setAuthSession();
+      // Store the real JWT returned by the backend, so every future
+      // request automatically sends it as "Authorization: Bearer …".
+      setAuthSession(data.token);
 
       // Return the user to the originally requested route
       // or redirect them to the dashboard.
       navigate(location.state?.from || ROUTES.DASHBOARD, {
         replace: true,
       });
+    } catch (error) {
+      // toast.promise already surfaced this to the user; also mirror
+      // it inline on the form for anyone who missed the toast.
+      setErrors({ form: error.message || "Unable to sign in. Please try again." });
     } finally {
-      // Always clear the loading state, even if the (future) real
-      // request throws, so the button doesn't get stuck spinning.
+      // Always clear the loading state, even if the request throws,
+      // so the button doesn't get stuck spinning.
       setLoading(false);
     }
   };
+
 
   return (
     <div className="relative min-h-screen w-full bg-[#0b0710]">
@@ -239,29 +264,6 @@ export default function Login() {
           className="mt-8 w-full max-w-[380px] rounded-2xl border bg-[#121614] p-5 shadow-[0_40px_90px_-15px_rgba(26,60,52,0.85),0_18px_40px_-8px_rgba(0,0,0,0.7)] backdrop-blur-xl sm:mt-10 sm:max-w-md sm:rounded-3xl sm:p-8 lg:max-w-[420px]"
           style={{ borderColor: `${ACCENT}99` }}
         >
-          {/* Tabs: switching tabs only changes which fields are shown; it
-              intentionally does NOT clear `fields`, so if a user tries
-              email, switches to username, then back to email, their
-              typed email is still there. */}
-          <div className="mb-5 flex rounded-xl bg-black/30 p-1 sm:mb-6">
-            {TABS.map((option) => (
-              <button
-                key={option.id}
-                type="button"
-                onClick={() => setTab(option.id)}
-                className={
-                  "min-h-[40px] flex-1 rounded-xl px-2 text-[13px] transition-colors sm:text-sm " +
-                  (tab === option.id
-                    ? "bg-white/10 font-semibold text-white"
-                    : "text-white/40 hover:text-white/70")
-                }
-                style={tab === option.id ? { boxShadow: `inset 0 0 0 1px ${ACCENT}66` } : undefined}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
-
           {/* ========================================================
               LOGIN FORM
               `noValidate` disables the browser's native validation
@@ -269,150 +271,78 @@ export default function Login() {
               dark theme) are the only feedback the user sees.
           ======================================================== */}
           <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5" noValidate>
-            {tab === "email" && (
-              <div>
-                <label htmlFor="login-email" className="mb-2 block text-[11px] font-medium tracking-[0.15em] text-white/40">
-                  CORPORATE EMAIL
+            <div>
+              <label htmlFor="login-username" className="mb-2 block text-[11px] font-medium tracking-[0.15em] text-white/40">
+                USERNAME
+              </label>
+              <Input
+                id="login-username"
+                name="username"
+                type="text"
+                placeholder="your.username"
+                required
+                autoComplete="username"
+                value={fields.username}
+                onChange={handleFieldChange}
+                aria-invalid={Boolean(errors.username)}
+                aria-describedby={errors.username ? "login-username-error" : undefined}
+                className={darkInputClass}
+                style={darkInputStyle}
+              />
+              {errors.username && (
+                <p id="login-username-error" className="mt-1.5 text-xs text-[#e8a655]">
+                  {errors.username}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <div className="mb-2 flex items-center justify-between">
+                <label htmlFor="login-password" className="text-[11px] font-medium tracking-[0.15em] text-white/40">
+                  SECURE PASSWORD
                 </label>
+               
+              </div>
+              <div className="relative">
                 <Input
-                  id="login-email"
-                  name="email"
-                  type="email"
-                  placeholder="you@example.com"
+                  id="login-password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter your password"
                   required
-                  autoComplete="email"
-                  inputMode="email"
-                  value={fields.email}
+                  autoComplete="current-password"
+                  value={fields.password}
                   onChange={handleFieldChange}
-                  aria-invalid={Boolean(errors.email)}
-                  aria-describedby={errors.email ? "login-email-error" : undefined}
-                  className={darkInputClass}
+                  aria-invalid={Boolean(errors.password)}
+                  aria-describedby={errors.password ? "login-password-error" : undefined}
+                  className={`${darkInputClass} pr-11`}
                   style={darkInputStyle}
                 />
-                {errors.email && (
-                  <p id="login-email-error" className="mt-1.5 text-xs text-[#e8a655]">
-                    {errors.email}
-                  </p>
-                )}
+                {/* Positioned absolutely inside the input's relative
+                    wrapper so it overlaps the field itself rather than
+                    taking up its own layout space next to it. */}
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((value) => !value)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center text-white/40 hover:text-white/70"
+                >
+                  {showPassword ? <EyeIcon /> : <EyeOffIcon />}
+                </button>
               </div>
-            )}
+              {errors.password && (
+                <p id="login-password-error" className="mt-1.5 text-xs text-[#e8a655]">
+                  {errors.password}
+                </p>
+              )}
+            </div>
 
-            {tab === "username" && (
-              <div>
-                <label htmlFor="login-username" className="mb-2 block text-[11px] font-medium tracking-[0.15em] text-white/40">
-                  USERNAME
-                </label>
-                <Input
-                  id="login-username"
-                  name="username"
-                  type="text"
-                  placeholder="your.username"
-                  required
-                  autoComplete="username"
-                  value={fields.username}
-                  onChange={handleFieldChange}
-                  aria-invalid={Boolean(errors.username)}
-                  aria-describedby={errors.username ? "login-username-error" : undefined}
-                  className={darkInputClass}
-                  style={darkInputStyle}
-                />
-                {errors.username && (
-                  <p id="login-username-error" className="mt-1.5 text-xs text-[#e8a655]">
-                    {errors.username}
-                  </p>
-                )}
-              </div>
-            )}
-
-            {tab === "otp" && (
-              <div>
-                <label htmlFor="login-mobile" className="mb-2 block text-[11px] font-medium tracking-[0.15em] text-white/40">
-                  MOBILE NUMBER
-                </label>
-                <Input
-                  id="login-mobile"
-                  name="mobile"
-                  type="tel"
-                  placeholder="+91 98765 43210"
-                  required
-                  autoComplete="tel"
-                  inputMode="tel"
-                  value={fields.mobile}
-                  onChange={handleFieldChange}
-                  aria-invalid={Boolean(errors.mobile)}
-                  aria-describedby={errors.mobile ? "login-mobile-error" : undefined}
-                  className={darkInputClass}
-                  style={darkInputStyle}
-                />
-                {errors.mobile && (
-                  <p id="login-mobile-error" className="mt-1.5 text-xs text-[#e8a655]">
-                    {errors.mobile}
-                  </p>
-                )}
-              </div>
-            )}
-
-            {/* Password is shared by the email and username flows (OTP
-                logs in with a one-time code instead), so it lives outside
-                the tab-specific blocks above rather than being duplicated
-                in each one. */}
-            {tab !== "otp" && (
-              <div>
-                <div className="mb-2 flex items-center justify-between">
-                  <label htmlFor="login-password" className="text-[11px] font-medium tracking-[0.15em] text-white/40">
-                    SECURE PASSWORD
-                  </label>
-                  <Link
-                    to={ROUTES.FORGOT_PASSWORD}
-                    className="text-[11px] font-medium text-white/40 hover:text-white/70"
-                  >
-                    Forgot password?
-                  </Link>
-                </div>
-                <div className="relative">
-                  <Input
-                    id="login-password"
-                    name="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Enter your password"
-                    required
-                    autoComplete="current-password"
-                    value={fields.password}
-                    onChange={handleFieldChange}
-                    aria-invalid={Boolean(errors.password)}
-                    aria-describedby={errors.password ? "login-password-error" : undefined}
-                    className={`${darkInputClass} pr-11`}
-                    style={darkInputStyle}
-                  />
-                  {/* Positioned absolutely inside the input's relative
-                      wrapper so it overlaps the field itself rather than
-                      taking up its own layout space next to it. */}
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((value) => !value)}
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                    className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center text-white/40 hover:text-white/70"
-                  >
-                    {showPassword ? <EyeIcon /> : <EyeOffIcon />}
-                  </button>
-                </div>
-                {errors.password && (
-                  <p id="login-password-error" className="mt-1.5 text-xs text-[#e8a655]">
-                    {errors.password}
-                  </p>
-                )}
-              </div>
-            )}
-
-            {/* Submit: label changes because the OTP tab doesn't log the
-                user in directly — it triggers sending a one-time code, a
-                separate step from the actual sign-in. */}
             <Button
               type="submit"
               loading={loading}
               className="mt-1 h-12 w-full !rounded-xl !bg-gradient-to-r from-[#f2c380] via-[#e8a655] to-[#d9822f] !text-[#241608] text-base font-extrabold tracking-wide shadow-lg transition-all duration-300 hover:!brightness-105 hover:scale-[1.03] hover:shadow-[0_20px_45px_-8px_rgba(184,115,51,0.85)] active:scale-[0.98] sm:mt-2 sm:text-lg"
             >
-              {tab === "otp" ? "SEND OTP" : "SIGN IN TO PORTAL"}
+              SIGN IN TO PORTAL
             </Button>
           </form>
 

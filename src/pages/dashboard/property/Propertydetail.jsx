@@ -31,17 +31,18 @@ const GOLD = "#e8b46a";
 export default function PropertyDetail() {
   const { slug } = useParams();
   const property = getPropertyBySlug(slug);
-
+  const [investing, setInvesting] = useState(false);
+  const [invested, setInvested] = useState(false);
   const [amount, setAmount] = useState(10);
 
   const totalCost = useMemo(
     () => (property ? amount * property.investment.tokenPrice : 0),
-    [amount, property]
+    [amount, property],
   );
   const estReturn = useMemo(
     () =>
       property ? (totalCost * property.investment.estimatedYield) / 100 : 0,
-    [totalCost, property]
+    [totalCost, property],
   );
 
   if (!property) {
@@ -63,7 +64,8 @@ export default function PropertyDetail() {
     );
   }
 
-  const { faixSold, faixTotal, tokenPrice, estimatedYield } = property.investment;
+  const { faixSold, faixTotal, tokenPrice, estimatedYield } =
+    property.investment;
   const committedPct = Math.round((faixSold / faixTotal) * 100);
 
   return (
@@ -139,7 +141,11 @@ export default function PropertyDetail() {
             {/* Property Description */}
             <Card>
               <SectionHeading>Property Description</SectionHeading>
-              <Text size="sm" color="muted" className="mt-4 !text-white/55 leading-relaxed">
+              <Text
+                size="sm"
+                color="muted"
+                className="mt-4 !text-white/55 leading-relaxed"
+              >
                 {property.description}
               </Text>
 
@@ -149,7 +155,10 @@ export default function PropertyDetail() {
                 {property.features.map((feature) => {
                   const Icon = feature.icon;
                   return (
-                    <div key={feature.label} className="flex items-center gap-2">
+                    <div
+                      key={feature.label}
+                      className="flex items-center gap-2"
+                    >
                       <Icon size={16} className="text-[#e8b46a]" />
                       <Text size="sm" color="muted" className="!text-white/70">
                         {feature.label}
@@ -164,9 +173,18 @@ export default function PropertyDetail() {
             <Card>
               <SectionHeading>Investment Structured Metrics</SectionHeading>
               <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <MetricBox label="Minimum Investment" value={property.metrics.minInvestment} />
-                <MetricBox label="Asset Valuation" value={property.metrics.assetValuation} />
-                <MetricBox label="Total Token Supply" value={property.metrics.totalTokenSupply} />
+                <MetricBox
+                  label="Minimum Investment"
+                  value={property.metrics.minInvestment}
+                />
+                <MetricBox
+                  label="Asset Valuation"
+                  value={property.metrics.assetValuation}
+                />
+                <MetricBox
+                  label="Total Token Supply"
+                  value={property.metrics.totalTokenSupply}
+                />
                 <MetricBox
                   label="Projected Capital ROI"
                   value={property.metrics.projectedRoi}
@@ -178,14 +196,21 @@ export default function PropertyDetail() {
             {/* Prime Location Details */}
             <Card>
               <SectionHeading>Prime Location Details</SectionHeading>
-              <Text size="sm" color="muted" className="mt-4 !text-white/55 leading-relaxed">
-                Situated at the premium location focal point of {property.city}. Easy
-                access, high commercial desirability and solid long-term capital
-                stability metrics.
+              <Text
+                size="sm"
+                color="muted"
+                className="mt-4 !text-white/55 leading-relaxed"
+              >
+                Situated at the premium location focal point of {property.city}.
+                Easy access, high commercial desirability and solid long-term
+                capital stability metrics.
               </Text>
 
               <div className="mt-5">
-                <LocationMap accent={property.mapAccent} label={property.city} />
+                <LocationMap
+                  accent={property.mapAccent}
+                  label={property.city}
+                />
               </div>
             </Card>
           </div>
@@ -202,7 +227,10 @@ export default function PropertyDetail() {
               <p className="text-[10px] font-semibold tracking-[0.2em] text-[#e8b46a]">
                 LIVE SYNDICATE POOL
               </p>
-              <Heading level={2} className="mt-1 font-serif !text-white text-2xl">
+              <Heading
+                level={2}
+                className="mt-1 font-serif !text-white text-2xl"
+              >
                 Investment Suite
               </Heading>
 
@@ -253,9 +281,11 @@ export default function PropertyDetail() {
                     onChange={(event) =>
                       setAmount(Math.max(1, Number(event.target.value) || 0))
                     }
-                    className="w-full bg-transparent text-sm text-white outline-none"
+                    className="w-full bg-transparent text-sm text-white outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                   />
-                  <span className="shrink-0 text-xs text-white/40">FAIX Tokens</span>
+                  <span className="shrink-0 text-xs text-white/40">
+                    FAIX Tokens
+                  </span>
                 </div>
               </div>
 
@@ -272,11 +302,48 @@ export default function PropertyDetail() {
                 </span>
               </div>
 
-              <Button
+              {/* <Button
                 type="button"
                 className="mt-5 h-12 w-full !rounded-full !bg-gradient-to-r from-[#f2c380] via-[#e8a655] to-[#d9822f] !text-[#241608] text-sm font-bold tracking-wide shadow-lg shadow-orange-900/40 transition-all duration-200 hover:!brightness-105 hover:scale-[1.02] active:scale-[0.98]"
               >
                 INVEST NOW
+              </Button> */}
+
+              <Button
+                type="button"
+                disabled={investing || invested}
+                onClick={() => {
+                  setInvesting(true);
+
+                  setTimeout(() => {
+                    setInvesting(false);
+                    setInvested(true);
+                  }, 1600);
+                }}
+                className={`relative mt-5 h-12 w-full !rounded-full text-sm font-bold tracking-wide transition-all duration-300 ${
+                  invested
+                    ? "!bg-[linear-gradient(135deg,rgb(26,60,52),rgb(14,33,28))] !text-[#e8b46a] !shadow-none"
+                    : "!bg-gradient-to-r from-[#f2c380] via-[#e8a655] to-[#d9822f] !text-[#241608] shadow-lg shadow-orange-900/40"
+                }`}
+              >
+                {investing ? (
+                  <span className="flex items-center justify-center gap-3">
+                    <span className="relative flex h-5 w-5 items-center justify-center">
+                      <span className="absolute h-5 w-5 animate-spin rounded-full border-2 border-black/20 border-t-[#241608]" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-[#241608]" />
+                    </span>
+                    Processing Investment...
+                  </span>
+                ) : invested ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#e8b46a] text-[#2c5c51]">
+                      ✓
+                    </span>
+                    Investment Successful
+                  </span>
+                ) : (
+                  "INVEST NOW"
+                )}
               </Button>
 
               <p className="mt-3 flex items-center justify-center gap-1.5 text-center text-[11px] text-white/35">
@@ -292,7 +359,11 @@ export default function PropertyDetail() {
               </Heading>
               <div className="mt-4 space-y-3 text-sm">
                 <Row label="Custodian" value={property.syndicate.custodian} />
-                <Row label="Registry ID" value={property.syndicate.registryId} mono />
+                <Row
+                  label="Registry ID"
+                  value={property.syndicate.registryId}
+                  mono
+                />
                 <Row
                   label="Expected Settlement"
                   value={property.syndicate.settlement}
@@ -361,7 +432,11 @@ function Row({ label, value, mono = false, valueClassName = "" }) {
 function LocationMap({ accent, label }) {
   return (
     <div className="relative h-52 w-full overflow-hidden rounded-xl border border-white/5 bg-[#0a0c14] sm:h-60">
-      <svg viewBox="0 0 800 300" className="h-full w-full" preserveAspectRatio="xMidYMid slice">
+      <svg
+        viewBox="0 0 800 300"
+        className="h-full w-full"
+        preserveAspectRatio="xMidYMid slice"
+      >
         <defs>
           <radialGradient id={`mapGlow-${label}`} cx="50%" cy="50%" r="55%">
             <stop offset="0%" stopColor={accent} stopOpacity="0.35" />
@@ -385,9 +460,27 @@ function LocationMap({ accent, label }) {
         </g>
 
         <circle cx="400" cy="150" r="5" fill={accent} />
-        <circle cx="400" cy="150" r="10" fill="none" stroke={accent} strokeOpacity="0.5" strokeWidth="1.5">
-          <animate attributeName="r" values="8;22;8" dur="2.4s" repeatCount="indefinite" />
-          <animate attributeName="opacity" values="0.6;0;0.6" dur="2.4s" repeatCount="indefinite" />
+        <circle
+          cx="400"
+          cy="150"
+          r="10"
+          fill="none"
+          stroke={accent}
+          strokeOpacity="0.5"
+          strokeWidth="1.5"
+        >
+          <animate
+            attributeName="r"
+            values="8;22;8"
+            dur="2.4s"
+            repeatCount="indefinite"
+          />
+          <animate
+            attributeName="opacity"
+            values="0.6;0;0.6"
+            dur="2.4s"
+            repeatCount="indefinite"
+          />
         </circle>
       </svg>
 

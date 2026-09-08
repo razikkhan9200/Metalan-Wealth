@@ -11,10 +11,16 @@ import {
 } from "lucide-react";
 
 // Images
-import canalSideHero from "../../public/images/canal-side-heritage-hero.png";
-import centralParkHero from "../../public/images/central-park-tower-suite-hero.png";
-import malibuHero from "../../public/images/malibu-coastal-sanctuary-hero.png";
-import marinaBayHero from "../../public/images/marina-bay-residences-hero.png";
+// import canalSideHero from "../../public/images/canal-side-heritage-hero.png";
+// import centralParkHero from "../../public/images/central-park-tower-suite-hero.png";
+// import malibuHero from "../../public/images/malibu-coastal-sanctuary-hero.png";
+// import marinaBayHero from "../../public/images/marina-bay-residences-hero.png";
+
+// Images
+import canalSideHero from "../../public/images/Dashboard-Property-images/canal-side-heritage-hero.png";
+import centralParkHero from "../../public/images/Dashboard-Property-images/central-park-tower-suite-hero.png";
+import malibuHero from "../../public/images/Dashboard-Property-images/malibu-coastal-sanctuary-hero.png";
+import marinaBayHero from "../../public/images/Dashboard-Property-Images/marina-bay-residences-hero.png";
 
 // isometric-visual
 export const PROPERTIES = [
