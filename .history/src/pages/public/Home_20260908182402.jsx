@@ -15,7 +15,7 @@ export default function Home() {
     <div>
       <Hero />
       <Tokenization />
-      <Funds />
+      {/* <Funds /> */}
       <PlatformFeatures />
       <Testimonials />
       <PlatformMetrics />

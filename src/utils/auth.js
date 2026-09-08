@@ -14,6 +14,10 @@
  */
 const KEY = "metalan_access_token";
 
+
+export const getToken = () => localStorage.getItem(KEY);
+
+
 /**
  * Checks whether an active authentication session exists.
  *

@@ -8,14 +8,14 @@ import HowItWorks from "../../sections/home/HowItWorks";
 import FourPillars from "../../sections/home/FourPillars";
 import Security from "../../sections/home/Security";
 import FAQ from "../../sections/home/FAQ";
-import Footer from "../../sections/home/Footer";
+// import Footer from "../../sections/home/Footer";
 
 export default function Home() {
   return (
     <div>
       <Hero />
       <Tokenization />
-      <Funds />
+      {/* <Funds /> */}
       <PlatformFeatures />
       <Testimonials />
       <PlatformMetrics />
