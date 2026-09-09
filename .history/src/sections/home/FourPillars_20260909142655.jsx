@@ -111,7 +111,7 @@ export default function FourPillars() {
 
   return (
     <section
-      id="about"
+      id="
       ref={sectionRef}
       className="bg-[#0A0A0A] py-14 sm:py-16 lg:py-20"
     >

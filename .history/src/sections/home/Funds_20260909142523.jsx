@@ -93,7 +93,7 @@ export default function Funds() {
 
   return (
     <section
-      id="investments"
+      id={}
       ref={sectionRef}
       className="relative min-h-[820px] overflow-hidden bg-[#0A0A0A] text-white"
     >

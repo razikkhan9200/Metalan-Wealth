@@ -98,7 +98,7 @@ export default function PublicNavbar() {
               <NavLink
                 key={item.label}
                 to={item.href}
-                onClick={(event) => handleSectionClick(event, item.href)}
+                onClick={() => setOpen(false)}
                 className={({ isActive }) =>
                   `py-[9px] text-[14px] font-medium sm:py-[11px] ${
                     isActive

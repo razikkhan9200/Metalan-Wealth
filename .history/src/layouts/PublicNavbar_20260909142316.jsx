@@ -5,24 +5,7 @@ import { ROUTES } from "../constants/routes";
 
 export default function PublicNavbar() {
   const [open, setOpen] = useState(false);
-  const handleSectionClick = (event, href) => {
-  const id = href.split("#")[1];
 
-  if (window.location.pathname === "/" && id) {
-    event.preventDefault();
-
-    const section = document.getElementById(id);
-
-    if (section) {
-      section.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
-    }
-
-    setOpen(false);
-  }
-};
   const navigation = [
   { label: "Platform", href: "/#platform" },
   { label: "Investments", href: "/#investments" },
@@ -49,12 +32,11 @@ export default function PublicNavbar() {
 
         <nav className="ml-[120px] hidden h-full items-center gap-[39px] xl:flex">
           {navigation.map((item) => (
-           <NavLink 
-                key={item.label} 
-                to={item.href}
-                onClick={(event) => handleSectionClick(event, item.href)}
-                className="text-[14px] font-medium !text-[#8F9A96] transition-colors duration-200 hover:text-[#F1EEE7]" 
-              >
+            <NavLink
+              key={item.label}
+              to={item.href}
+              className="text-[14px] font-medium !text-[#8F9A96] transition-colors duration-200 hover:text-[#F1EEE7]"
+            >
               {item.label}
             </NavLink>
           ))}
@@ -98,7 +80,7 @@ export default function PublicNavbar() {
               <NavLink
                 key={item.label}
                 to={item.href}
-                onClick={(event) => handleSectionClick(event, item.href)}
+                onClick={() => setOpen(false)}
                 className={({ isActive }) =>
                   `py-[9px] text-[14px] font-medium sm:py-[11px] ${
                     isActive
