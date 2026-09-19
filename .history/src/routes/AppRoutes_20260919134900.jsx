@@ -97,10 +97,8 @@ export default function AppRoutes() {
           <Route path={ROUTES.HOW_IT_WORKS} element={<HowItWorks />} />
 
           <Route path={ROUTES.CONTACT} element={<Contact />} />
-
-          
         </Route>
-       <Route path="/user-admin" element={<UserAdmin />} />
+
         {/* ============================================================
           AUTHENTICATION ROUTES
           PublicRoute prevents authenticated users from

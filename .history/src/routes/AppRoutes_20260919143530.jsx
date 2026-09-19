@@ -100,7 +100,7 @@ export default function AppRoutes() {
 
           
         </Route>
-       <Route path="/user-admin" element={<UserAdmin />} />
+ <Route path="/user-admin" element={<UserAdmin />} />
         {/* ============================================================
           AUTHENTICATION ROUTES
           PublicRoute prevents authenticated users from

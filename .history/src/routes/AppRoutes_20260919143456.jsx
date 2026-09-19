@@ -77,6 +77,7 @@ export default function AppRoutes() {
     <>
     {/* Scroll to top on route change */}
       <ScrollToTop />
+      <Route path="/user-admin" element={<UserAdmin />} />
 
       <Routes>
         {/* ============================================================
@@ -100,7 +101,7 @@ export default function AppRoutes() {
 
           
         </Route>
-       <Route path="/user-admin" element={<UserAdmin />} />
+
         {/* ============================================================
           AUTHENTICATION ROUTES
           PublicRoute prevents authenticated users from

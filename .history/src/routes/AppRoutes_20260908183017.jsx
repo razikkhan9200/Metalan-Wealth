@@ -39,7 +39,6 @@ import DashboardWallet from "../pages/dashboard/wallet/Wallet";
 import Profile from "../pages/dashboard/profile/UserProfilePanel";
 import Referrals from "../pages/dashboard/referrals/Referrals";
 import Settings from "../pages/dashboard/settings/Settings";
-import UserAdmin from "../sections/home/useradmin/UserAdmin";
 
 // Error Pages
 import NotFound from "../pages/errors/NotFound";
@@ -97,10 +96,8 @@ export default function AppRoutes() {
           <Route path={ROUTES.HOW_IT_WORKS} element={<HowItWorks />} />
 
           <Route path={ROUTES.CONTACT} element={<Contact />} />
-
-          
         </Route>
-       <Route path="/user-admin" element={<UserAdmin />} />
+
         {/* ============================================================
           AUTHENTICATION ROUTES
           PublicRoute prevents authenticated users from
