@@ -118,37 +118,38 @@ export default function Wallet({ onNavigate = () => {} }) {
 
   return (
     <PageShell active="Wallet" onNavigate={onNavigate}>
-      <PageHeader
+      <div className="mx-auto w-full max-w-7xl min-w-0 space-y-5 overflow-x-hidden sm:space-y-6">
+        <PageHeader
         icon={WalletIcon}
         tone="emerald"
         eyebrow="Wallet"
         title="Your FAIX balance and exchange assets"
         subtitle="Deposit, withdraw, and move value between your FAIX balance and exchange assets."
         right={
-          <>
-            <button type="button" onClick={() => onNavigate("Exchange")} className={BTN.cyanSoft}>
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+            <button type="button" onClick={() => onNavigate("Exchange")} className={`${BTN.cyanSoft} w-full sm:w-auto`}>
               <ArrowLeftRight className="h-4 w-4" /> Exchange <span className="rounded-full bg-[#d4af6a]/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-[#e2c17f]">Soon</span>
             </button>
-            <button type="button" onClick={() => setModal("deposit")} className={BTN.gold}>
+            <button type="button" onClick={() => setModal("deposit")} className={`${BTN.gold} w-full sm:w-auto`}>
               <Plus className="h-4 w-4" /> Add funds
             </button>
-          </>
+          </div>
         }
       />
 
       {/* balance hero */}
-      <section className={`${CARD} grid gap-6 p-5 sm:p-6 lg:grid-cols-[1.1fr_1fr] lg:items-center`}>
+      <section className={`${CARD} grid min-w-0 gap-5 p-4 sm:gap-6 sm:p-6 lg:grid-cols-[1.1fr_1fr] lg:items-center`}>
         <div>
           <p className="text-sm text-slate-400">Total wallet worth</p>
-          <p className="mt-2 text-4xl font-semibold tabular-nums text-white sm:text-5xl">
-            {fmt0(totalWorth)} <span className="ml-1 text-base font-medium text-slate-400 sm:text-lg">FAIX</span>
+          <p className="mt-2 break-words text-3xl font-semibold tabular-nums text-white sm:text-5xl">
+            {fmt(totalWorth, 4)} <span className="ml-1 text-base font-medium text-slate-400 sm:text-lg">FAIX</span>
           </p>
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-xs text-slate-200">
-              <ShieldCheck className="h-3.5 w-3.5 text-emerald-300" /> Available {fmt0(faix)} FAIX
+              <ShieldCheck className="h-3.5 w-3.5 text-emerald-300" /> Available {fmt(faix, 4)} FAIX
             </span>
             <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-xs text-slate-200">
-              <Coins className="h-3.5 w-3.5 text-[#e2c17f]" /> Exchange {fmt0(exchange.value)} FAIX
+              <Coins className="h-3.5 w-3.5 text-[#e2c17f]" /> Exchange {fmt(exchange.value, 4)} FAIX
             </span>
           </div>
           <button
@@ -159,7 +160,7 @@ export default function Wallet({ onNavigate = () => {} }) {
             <Copy className="h-3.5 w-3.5" /> {copied ? "Copied wallet ID" : "FAIX-WALLET-8231-9940"}
           </button>
         </div>
-        <div className="h-40 w-full [&_*]:outline-none sm:h-48">
+        <div className="h-36 min-w-0 w-full [&_*]:outline-none sm:h-48">
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={series} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
               <defs>
@@ -180,31 +181,31 @@ export default function Wallet({ onNavigate = () => {} }) {
       </section>
 
       {/* stats */}
-      <section aria-label="Wallet overview" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard icon={WalletIcon} tone="cyan" label="Available FAIX" value={fmt0(faix)} unit="FAIX" note="Ready to invest or withdraw" />
-        <StatCard icon={Coins} tone="gold" label="Exchange assets" value={fmt0(exchange.value)} unit="FAIX" change={exchange.cost > 0 ? (exchangeGain / exchange.cost) * 100 : 0} note="Value of swapped assets" />
-        <StatCard icon={ArrowDownToLine} tone="emerald" label="Deposited (30d)" value={fmt0(txs.filter((t) => t.type === "Deposit").reduce((s, t) => s + t.amount, 0))} unit="FAIX" note="Total top-ups" />
+      <section aria-label="Wallet overview" className="grid grid-cols-1 gap-3 min-[430px]:grid-cols-2 lg:grid-cols-4">
+        <StatCard icon={WalletIcon} tone="cyan" label="Available FAIX" value={fmt(faix, 4)} unit="FAIX" note="Ready to invest or withdraw" />
+        <StatCard icon={Coins} tone="gold" label="Exchange assets" value={fmt(exchange.value, 4)} unit="FAIX" change={exchange.cost > 0 ? (exchangeGain / exchange.cost) * 100 : 0} note="Value of swapped assets" />
+        <StatCard icon={ArrowDownToLine} tone="emerald" label="Deposited (30d)" value={fmt(txs.filter((t) => t.type === "Deposit").reduce((s, t) => s + t.amount, 0), 4)} unit="FAIX" note="Total top-ups" />
         <StatCard icon={ArrowLeftRight} tone="violet" label="Exchange fee" value={`${(EXCHANGE_FEE * 100).toFixed(2)}%`} note="Applied per swap" />
       </section>
 
       {/* quick actions */}
-      <section aria-label="Wallet actions" className="grid grid-cols-2 gap-3 lg:grid-cols-3">
-        <button type="button" onClick={() => setModal("deposit")} className={`${CARD} flex items-center gap-3 p-4 text-left transition-colors hover:border-white/15`}>
+      <section aria-label="Wallet actions" className="grid grid-cols-1 gap-3 min-[430px]:grid-cols-2 lg:grid-cols-3">
+        <button type="button" onClick={() => setModal("deposit")} className={`${CARD} min-w-0 flex items-center gap-3 p-3.5 text-left transition-colors hover:border-white/15 sm:p-4`}>
           <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl ring-1 ${ACCENT.emerald}`}><Plus className="h-5 w-5" /></span>
-          <span><span className="block text-sm font-semibold text-white">Add funds</span><span className="hidden text-xs text-slate-500 sm:block">Top up your FAIX balance</span></span>
+          <span className="min-w-0"><span className="block truncate text-sm font-semibold text-white">Add funds</span><span className="hidden text-xs text-slate-500 sm:block">Top up your FAIX balance</span></span>
         </button>
-        <button type="button" onClick={() => setModal("withdraw")} className={`${CARD} flex items-center gap-3 p-4 text-left transition-colors hover:border-white/15`}>
+        <button type="button" onClick={() => setModal("withdraw")} className={`${CARD} min-w-0 flex items-center gap-3 p-3.5 text-left transition-colors hover:border-white/15 sm:p-4`}>
           <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl ring-1 ${ACCENT.rose}`}><ArrowDownToLine className="h-5 w-5" /></span>
-          <span><span className="block text-sm font-semibold text-white">Withdraw <span className="ml-1 rounded-full bg-[#d4af6a]/15 px-1.5 py-0.5 align-middle text-[9px] font-semibold uppercase tracking-wide text-[#e2c17f]">Soon</span></span><span className="hidden text-xs text-slate-500 sm:block">Send FAIX to bank or crypto</span></span>
+          <span className="min-w-0"><span className="block truncate text-sm font-semibold text-white">Withdraw <span className="ml-1 rounded-full bg-[#d4af6a]/15 px-1.5 py-0.5 align-middle text-[9px] font-semibold uppercase tracking-wide text-[#e2c17f]">Soon</span></span><span className="hidden text-xs text-slate-500 sm:block">Send FAIX to bank or crypto</span></span>
         </button>
-        <button type="button" onClick={() => onNavigate("Exchange")} className={`${CARD} flex items-center gap-3 p-4 text-left transition-colors hover:border-white/15`}>
+        <button type="button" onClick={() => onNavigate("Exchange")} className={`${CARD} min-w-0 flex items-center gap-3 p-3.5 text-left transition-colors hover:border-white/15 sm:p-4`}>
           <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl ring-1 ${ACCENT.violet}`}><ArrowLeftRight className="h-5 w-5" /></span>
-          <span><span className="block text-sm font-semibold text-white">Exchange <span className="ml-1 rounded-full bg-[#d4af6a]/15 px-1.5 py-0.5 align-middle text-[9px] font-semibold uppercase tracking-wide text-[#e2c17f]">Soon</span></span><span className="hidden text-xs text-slate-500 sm:block">Token exchange is coming soon</span></span>
+          <span className="min-w-0"><span className="block truncate text-sm font-semibold text-white">Exchange <span className="ml-1 rounded-full bg-[#d4af6a]/15 px-1.5 py-0.5 align-middle text-[9px] font-semibold uppercase tracking-wide text-[#e2c17f]">Soon</span></span><span className="hidden text-xs text-slate-500 sm:block">Token exchange is coming soon</span></span>
         </button>
       </section>
 
       {/* recent activity */}
-      <section className={`${CARD} p-5`}>
+      <section className={`${CARD} min-w-0 overflow-hidden p-4 sm:p-5`}>
         <SectionTitle icon={Clock} tone="cyan" title="Recent wallet activity" subtitle="Latest deposits, withdrawals and exchanges" />
         {loading && <p className="py-6 text-center text-sm text-slate-500">Loading…</p>}
         {!loading && loadError && <p className="py-6 text-center text-sm text-rose-300">{loadError}</p>}
@@ -215,14 +216,14 @@ export default function Wallet({ onNavigate = () => {} }) {
           {!loading && !loadError && txs.filter((t) => ["Deposit", "Withdraw", "Exchange"].includes(t.type)).slice(0, 6).map((t) => {
             const { icon: Icon, tone } = TX_META[t.type];
             return (
-              <div key={t.id} className="flex items-center gap-3 py-3">
+              <div key={t.id} className="flex min-w-0 items-center gap-3 py-3">
                 <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl ring-1 ${ACCENT[tone]}`}><Icon className="h-4 w-4" /></span>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium text-slate-100">{t.type}</p>
                   <p className="mt-0.5 flex items-center gap-1 text-[11px] text-slate-500"><Clock className="h-3 w-3" />{fmtDate(t.date)}</p>
                 </div>
                 <p className={`shrink-0 text-sm font-semibold tabular-nums ${t.amount >= 0 ? "text-emerald-300" : "text-slate-200"}`}>
-                  {t.amount >= 0 ? "+" : "−"}{fmt0(Math.abs(t.amount))}
+                  {t.amount >= 0 ? "+" : "−"}{fmt(Math.abs(t.amount), 4)}
                 </p>
               </div>
             );
@@ -246,7 +247,8 @@ export default function Wallet({ onNavigate = () => {} }) {
         </Modal>
       )}
 
-      {toast && <Toast message={toast} />}
+        {toast && <Toast message={toast} />}
+      </div>
     </PageShell>
   );
 }
@@ -257,20 +259,20 @@ function DepositForm({ faix, onSubmit }) {
   const amt = Math.max(0, parseFloat(amount) || 0);
   const error = amt > 1_000_000 ? "The maximum single deposit is 1,000,000 FAIX." : "";
   return (
-    <div className="space-y-5">
+    <div className="space-y-4 sm:space-y-5">
       <div className="grid grid-cols-3 gap-2">
         {METHODS.map(({ id, icon: Icon }) => (
           <button key={id} type="button" onClick={() => setMethod(id)}
-            className={`flex flex-col items-center gap-1.5 rounded-xl border px-2 py-3 text-xs transition-colors ${method === id ? "border-cyan-400/50 bg-cyan-400/[0.06] text-white" : "border-white/10 bg-white/[0.02] text-slate-400 hover:border-white/20"}`}>
-            <Icon className="h-4 w-4" />{id}
+            className={`flex flex-col items-center gap-1.5 rounded-xl border px-2 py-3 text-xs transition-colors ${method === id ? "border-[#d4af6a]/45 bg-[#d4af6a]/[0.08] text-white ring-1 ring-[#d4af6a]/15" : "border-white/10 bg-white/[0.02] text-slate-400 hover:border-white/20"}`}>
+            <Icon className="h-4 w-4 shrink-0" /><span className="truncate">{id}</span>
           </button>
         ))}
       </div>
       <AmountField label="Amount to add" unit="FAIX" value={amount} onChange={setAmount}
         chips={[1000, 5000, 10000, 25000].map((v) => ({ label: fmt0(v), value: v }))} />
       <InfoList>
-        <InfoRow label="Current balance" value={`${fmt(faix)} FAIX`} />
-        <InfoRow label="Balance after" value={`${fmt(faix + (error ? 0 : amt))} FAIX`} accent="text-emerald-300" />
+        <InfoRow label="Current balance" value={`${fmt(faix, 4)} FAIX`} />
+        <InfoRow label="Balance after" value={`${fmt(faix + (error ? 0 : amt), 4)} FAIX`} accent="text-emerald-300" />
       </InfoList>
       <FormError>{error}</FormError>
       <button type="button" disabled={amt <= 0 || !!error} onClick={() => onSubmit({ amount: amt, method })} className={`${BTN.gold} w-full`}>

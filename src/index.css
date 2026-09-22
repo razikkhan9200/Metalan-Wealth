@@ -76,3 +76,55 @@ html::-webkit-scrollbar-thumb:hover {
   background: #e8b46a;
 }
 
+
+select:focus {
+  border-color: rgba(34, 211, 238, 0.5);
+  box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.15);
+}
+
+select option {
+  background: #0a1019 !important;
+  color: #e2e8f0 !important;
+}
+
+select option:hover,
+select option:checked {
+  background: #102131 !important;
+  color: #67e8f9 !important;
+}
+
+/* Global dark native select */
+select {
+  color-scheme: dark;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  background-color: #080d14 !important;
+  color: #e2e8f0 !important;
+
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 12px;
+  outline: none;
+}
+
+select:focus {
+  border-color: rgba(34,211,238,.50);
+  box-shadow: 0 0 0 1px rgba(34,211,238,.15);
+}
+
+select option {
+  color-scheme: dark;
+  background-color: #0a1019 !important;
+  color: #e2e8f0 !important;
+}
+
+select option:checked {
+  background-color: #102131 !important;
+  color: #67e8f9 !important;
+}
+
+.dark-select {
+  color-scheme: dark !important;
+}
+

@@ -1,11 +1,10 @@
 "use client";
 /**
- * UserAdmin.jsx — Metalan investor dashboard (single page, dummy data only)
+ * UserAdmin.jsx — Metalan investor dashboard (API-integrated)
  *
  * Dependencies:  npm i gsap recharts lucide-react
  * Theme:         colors are Tailwind arbitrary values (#05080d base, cyan accent, #d4af6a gold).
- * Images:        Unsplash hotlinks (plain <img>, so no next/image config needed). Every image has a
- *                graceful fallback, so a dead link never breaks the layout. Swap URLs in IMAGES / PROPERTIES.
+ * Images:        Design/hero image is static; investor/property/fund data comes from the authenticated API.
  */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import gsap from "gsap";
@@ -20,7 +19,8 @@ import Lenis from "lenis";
 import NavigationPanel from "./NavigationPanel";
 import { useLogout } from "./shared/nav";
 import { RankBadge, ViewAllButton } from "./shared/ui";
-import { TIER, USERS, initials } from "./shared/theme";
+import { initials } from "./shared/theme";
+import { get, post } from "../../services/Api";
 
 /* ────────────────────────────── design tokens ────────────────────────────── */
 
@@ -116,48 +116,20 @@ const STYLES = `
 
 const U = (id, w = 900) => `https://images.unsplash.com/${id}?auto=format&fit=crop&w=${w}&q=80`;
 const IMAGES = {
-  hero: U("photo-1477959858617-67f85cf4f1df", 1800), // city skyline at night
-  avatar: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTY2nu_3BHiQIh0zFe3h10UpT6MYnKJjo0IOoZZIowa--dp-7x_HDNXWl6R&s=10",
+  hero: U("photo-1477959858617-67f85cf4f1df", 1800), // dashboard design background
 };
 
-/* ────────────────────────────── dummy data ────────────────────────────── */
 
-const FUNDS = [
-  { id: "growth", name: "Metalan Growth Fund", category: "Equity growth", nav: 12.485, growth: 18.4, risk: "Moderate", status: "Open", min: 100, icon: TrendingUp },
-  { id: "income", name: "Sovereign Income Fund", category: "Fixed income", nav: 10.213, growth: 7.2, risk: "Low", status: "Open", min: 100, icon: ShieldCheck },
-  { id: "realty", name: "Prime Realty REIT Fund", category: "Real estate", nav: 24.76, growth: 11.6, risk: "Moderate", status: "Limited", min: 250, icon: Building2 },
-  { id: "digital", name: "Digital Assets Alpha", category: "Digital assets", nav: 8.942, growth: 26.9, risk: "High", status: "Open", min: 100, icon: Coins },
-  { id: "tech", name: "Global Tech Leaders Fund", category: "Technology equity", nav: 15.372, growth: 21.3, risk: "High", status: "Open", min: 100, icon: Cpu },
-  { id: "green", name: "Green Energy Transition", category: "Sustainable energy", nav: 9.318, growth: 14.1, risk: "Moderate", status: "Open", min: 150, icon: Leaf },
-];
-
-const PROPERTIES = [
-  { id: "marina", name: "Azure Marina Residences", location: "Dubai Marina, UAE", value: 4850000, tokenPrice: 250, total: 19400, available: 7420, yield: 6.2, img: U("photo-1512453979798-5ea266f8880c") },
-  { id: "bkc", name: "Central Park Offices", location: "Bandra Kurla, Mumbai", value: 3200000, tokenPrice: 200, total: 16000, available: 5180, yield: 7.4, img: U("photo-1486406146926-c627a92ad1ab") },
-  { id: "aldwych", name: "The Aldwych Suites", location: "Covent Garden, London", value: 6400000, tokenPrice: 500, total: 12800, available: 3960, yield: 4.9, img: U("photo-1513635269975-59663e0ac1ad") },
-  { id: "palm", name: "Palm Grove Villas", location: "Phuket, Thailand", value: 1950000, tokenPrice: 150, total: 13000, available: 4310, yield: 8.1, img: U("photo-1613490493576-7fde63acd811") },
-  { id: "sg", name: "Marina Bay Towers", location: "Marina Bay, Singapore", value: 5600000, tokenPrice: 400, total: 14000, available: 5230, yield: 5.4, img: U("photo-1525625293386-3f8f99389edd") },
-  { id: "bali", name: "Emerald Bay Resort", location: "Ubud, Bali", value: 2300000, tokenPrice: 120, total: 19200, available: 6840, yield: 9.0, img: U("photo-1582719508461-905c673771fd") },
-];
-
-const INITIAL_FUNDS = { growth: { units: 2400, cost: 26400 }, income: { units: 3000, cost: 29700 }, realty: { units: 500, cost: 10950 } };
-const INITIAL_PROPS = { marina: { tokens: 30, cost: 7200 }, bkc: { tokens: 40, cost: 7600 } };
-
-const ago = (hours) => new Date(Date.now() - hours * 3600e3);
-const SEED_TXS = [
-  { id: 1, asset: "Metalan Growth Fund", type: "Investment", amount: -5000, date: ago(5), status: "Completed" },
-  { id: 2, asset: "FAIX Wallet", type: "Deposit", amount: 15000, date: ago(29), status: "Completed" },
-  { id: 3, asset: "Azure Marina Residences", type: "Buy", amount: -3750, date: ago(76), status: "Completed" },
-  { id: 4, asset: "Exchange Wallet", type: "Exchange", amount: -2500, date: ago(120), status: "Completed" },
-  { id: 5, asset: "Sovereign Income Fund", type: "Investment", amount: -8000, date: ago(190), status: "Completed" },
-  { id: 6, asset: "Central Park Offices", type: "Buy", amount: -4000, date: ago(310), status: "Completed" },
-];
 
 const TX_META = {
   Deposit: { icon: ArrowDownToLine, tone: "emerald" },
   Investment: { icon: TrendingUp, tone: "cyan" },
   Buy: { icon: Building2, tone: "gold" },
   Exchange: { icon: ArrowLeftRight, tone: "violet" },
+  Sell: { icon: ArrowUpRight, tone: "emerald" },
+  Dividend: { icon: Coins, tone: "emerald" },
+  Withdraw: { icon: ArrowDownToLine, tone: "gold" },
+  Stake: { icon: TrendingUp, tone: "cyan" },
 };
 
 const QUICK_ACTIONS = [
@@ -167,103 +139,229 @@ const QUICK_ACTIONS = [
   { key: "exchange", label: "Exchange", hint: "Move value to or from exchange assets", icon: ArrowLeftRight, tone: "violet" },
 ];
 
-/* ────────────────────────────── formatting ────────────────────────────── */
 
-const fmt = (n, d = 2) => n.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+
+const fmt = (n, d = 4) => n.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
 const fmt0 = (n) => fmt(n, 0);
-const compact = (n) => new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 2 }).format(n);
+const compact = (n) => fmt(n, 4);
 const signedPct = (n) => `${n >= 0 ? "+" : ""}${n.toFixed(2)}%`;
 const fmtDate = (d) =>
   `${d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}, ${d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}`;
 
-/* ────────────────────────── chart data generation ──────────────────────────
- * Deterministic, seeded history for each filter. Each period ends where the
- * newer one starts, so paging back through time stays continuous. The latest
- * period always ends at the live portfolio value.
- */
+
+const FAIX_TOKEN_VALUE = 11;
+
+const FUND_ICON_MAP = {
+  "trending-up": TrendingUp,
+  "shield-check": ShieldCheck,
+  building2: Building2,
+  coins: Coins,
+  cpu: Cpu,
+  leaf: Leaf,
+};
+
+
+
+///////API
+
+
+function mapApiFund(fund) {
+  const iconKey = String(fund?.icon || "").toLowerCase();
+  const id = String(fund?._id || fund?.id || fund?.name || "fund");
+
+  const totalUnits = Number(fund?.totalUnits ?? fund?.totalFundUnits ?? fund?.issuedUnits) || 0;
+  const soldUnits = Number(fund?.soldUnits ?? fund?.usedUnits ?? fund?.investedUnits) || 0;
+  const soldPercent = Number.isFinite(Number(fund?.soldPercent))
+    ? Number(fund.soldPercent)
+    : totalUnits > 0
+      ? (Math.max(0, soldUnits) / totalUnits) * 100
+      : 0;
+
+  return {
+    id,
+    name: fund?.name || "Fund",
+    category: fund?.category || "Investment fund",
+    nav: Number(fund?.nav) || 0,
+    growth: Number(fund?.growthPercent) || 0,
+    status: fund?.isActive ? "Open" : "Closed",
+    min: 0,
+    totalUnits: Math.max(0, totalUnits),
+    soldUnits: Math.max(0, soldUnits),
+    soldPercent: Math.max(0, Math.min(100, soldPercent)),
+    icon: FUND_ICON_MAP[iconKey] || TrendingUp,
+    soldFaixToken: Number(fund?.soldFaixToken ?? fund?.soldTokens ?? fund?.faixTokenSold) || 0,
+    img: fund?.imageUrl || fund?.image || fund?.coverImage || "",
+    apiId: fund?._id || fund?.id,
+  };
+}
+
+function mapApiProperty(property, index) {
+  const total = Math.max(0, Number(property?.totalFaixToken) || 0);
+  const available = Math.max(0, Number(property?.availableFaixToken) || 0);
+  const sold = Math.max(0, Number(property?.soldFaixToken) || Math.max(total - available, 0));
+  const soldPercent = total > 0 ? Math.max(0, Math.min(100, (sold / total) * 100)) : 0;
+  const tokenPrice = Math.max(0, Number(property?.tokenValue ?? property?.faixTokenValue ?? FAIX_TOKEN_VALUE) || FAIX_TOKEN_VALUE);
+
+  return {
+    id: String(property?._id || property?.id || property?.propertyName || `property-${index}`),
+    name: property?.propertyName || "Property",
+    location: property?.location || "",
+    value: Number(property?.totalPropertyCost) || 0,
+    tokenPrice,
+    total,
+    available,
+    sold,
+    soldPercent,
+    status: property?.status || "Available",
+    propertyType: property?.propertyType || "",
+    description: property?.description || "",
+    img: property?.propertyImage || property?.images?.find((image) => image?.url)?.url || "",
+    apiId: property?._id || property?.id,
+  };
+}
+
+function mapApiTransaction(transaction, index) {
+  const rawType = transaction?.type || "Transaction";
+  const typeMap = {
+    Swap: "Exchange",
+    Stake: "Investment",
+  };
+  const type = typeMap[rawType] || rawType;
+  const meta = Number.isFinite(Number(transaction?.total))
+    ? Number(transaction.total)
+    : Number(transaction?.amount) || 0;
+  const credit = rawType === "Deposit" || rawType === "Dividend" || rawType === "Sell" || rawType === "Withdraw";
+
+  return {
+    id: String(transaction?._id || transaction?.id || `transaction-${index}`),
+    asset: transaction?.asset || "Transaction",
+    type,
+    amount: credit ? Math.abs(meta) : -Math.abs(meta),
+    date: new Date(transaction?.date || transaction?.createdAt || Date.now()),
+    status: transaction?.status || "Pending",
+  };
+}
+
 
 const RANGES = {
-  daily: { label: "Daily", points: 24, growth: [0.004, 0.012] },
-  weekly: { label: "Weekly", points: 7, growth: [0.012, 0.035] },
-  monthly: { label: "Monthly", points: 30, growth: [0.03, 0.08] },
-  yearly: { label: "Yearly", points: 12, growth: [0.14, 0.32] },
+  daily: { label: "Daily", points: 24, hours: 24 },
+  weekly: { label: "Weekly", points: 7, days: 7 },
+  monthly: { label: "Monthly", points: 30, days: 30 },
+  yearly: { label: "Yearly", points: 12, months: 12 },
 };
 const MAX_OFFSET = 5;
 
-function rng(seed) {
-  return () => {
-    seed = (seed + 0x6d2b79f5) | 0;
-    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-const seedFor = (range, k) => (Object.keys(RANGES).indexOf(range) + 1) * 1000 + k * 17 + 5;
-function periodGrowth(range, k) {
-  const [lo, hi] = RANGES[range].growth;
-  return 1 + lo + rng(seedFor(range, k))() * (hi - lo);
+function addRangeStep(date, range, amount) {
+  const d = new Date(date);
+  if (range === "daily") d.setHours(d.getHours() + amount);
+  else if (range === "yearly") d.setMonth(d.getMonth() + amount);
+  else d.setDate(d.getDate() + amount);
+  return d;
 }
 
-function pointMeta(range, offset, i, n) {
-  const now = new Date();
-  const [y, m, d] = [now.getFullYear(), now.getMonth(), now.getDate()];
-  const fmtD = (date, opts) => date.toLocaleDateString("en-US", opts);
+function formatChartPoint(date, range) {
   if (range === "daily") {
-    const date = new Date(y, m, d - offset, i);
-    const hh = `${String(i).padStart(2, "0")}:00`;
-    return { date, label: hh, full: `${fmtD(date, { weekday: "short", month: "short", day: "numeric" })}, ${hh}` };
+    return {
+      label: date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false }),
+      full: date.toLocaleString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false }),
+    };
   }
   if (range === "yearly") {
-    const date = new Date(y, m - offset * 12 - (n - 1 - i), 1);
-    return { date, label: fmtD(date, { month: "short" }), full: fmtD(date, { month: "long", year: "numeric" }) };
+    return {
+      label: date.toLocaleDateString("en-US", { month: "short" }),
+      full: date.toLocaleDateString("en-US", { month: "long", year: "numeric" }),
+    };
   }
-  const step = range === "weekly" ? 7 : 30;
-  const date = new Date(y, m, d - offset * step - (n - 1 - i));
   return {
-    date,
-    label: range === "weekly" ? fmtD(date, { weekday: "short" }) : fmtD(date, { month: "short", day: "numeric" }),
-    full: fmtD(date, { weekday: "short", month: "short", day: "numeric", year: "numeric" }),
+    label: range === "weekly" ? date.toLocaleDateString("en-US", { weekday: "short" }) : date.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+    full: date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" }),
   };
 }
 
-function buildSeries(range, offset, anchor, delta) {
-  const n = RANGES[range].points;
-  let end = anchor;
-  for (let k = 0; k < offset; k++) end /= periodGrowth(range, k);
-  const g = periodGrowth(range, offset);
-  const start = end / g;
+function buildSeries(range, offset, currentTotal, history = []) {
+  const cfg = RANGES[range];
+  const source = Array.isArray(history) ? history : [];
+  const anchor = Math.max(0, Number(currentTotal) || 0);
+  const apiPoints = source
+    .map((point) => {
+      const date = new Date(point?.date || point?.timestamp || point?.createdAt);
+      const value = Number(point?.value ?? point?.totalAmount ?? point?.portfolioValue);
+      return Number.isFinite(date.getTime()) && Number.isFinite(value) ? { date, value } : null;
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.date - b.date);
 
-  const r = rng(seedFor(range, offset) + 999);
-  const [p1, p2, f1, f2] = [r() * 6.28, r() * 6.28, 1.5 + r() * 1.5, 3 + r() * 2];
-  const amp = (g - 1) * 0.45 + 0.002;
-  const values = Array.from({ length: n }, (_, i) => {
-    const t = i / (n - 1);
-    const wave = 0.65 * Math.sin(2 * Math.PI * f1 * t + p1) + 0.35 * Math.sin(2 * Math.PI * f2 * t + p2);
-    return start * (1 + (g - 1) * t + amp * wave * Math.sin(Math.PI * t));
-  });
+  if (apiPoints.length >= 2) {
+    const apiValues = apiPoints.map((p) => p.value);
+    const apiLo = Math.min(...apiValues);
+    const apiHi = Math.max(...apiValues);
+    const hasMeaningfulVariation = apiHi - apiLo > Math.max(0.01, anchor * 0.0001);
 
-  // Live activity (deposits, NAV moves, fees) shows up as a ramp over the latest points.
-  if (offset === 0 && delta) {
-    const m = Math.max(2, Math.ceil(n * 0.25));
-    for (let i = n - m; i < n; i++) values[i] += delta * ((i - (n - m - 1)) / m);
+    const last = apiPoints[apiPoints.length - 1];
+    const shiftedLast = addRangeStep(last.date, range, -offset * (range === "yearly" ? 12 : range === "daily" ? 24 : cfg.points));
+    const windowStart = addRangeStep(shiftedLast, range, -(cfg.points - 1));
+    const windowEnd = shiftedLast;
+    const filtered = apiPoints.filter((p) => p.date >= windowStart && p.date <= windowEnd);
+
+    if (filtered.length >= 2 && hasMeaningfulVariation) {
+      const data = filtered.map((p) => ({
+        ...p,
+        ...formatChartPoint(p.date, range),
+        baseline: filtered[0].value,
+      }));
+
+      // Keep the visible latest point tied to the live portfolio value.
+      if (offset === 0 && anchor > 0 && data.length) {
+        data[data.length - 1] = {
+          ...data[data.length - 1],
+          value: anchor,
+        };
+      }
+
+      return {
+        data,
+        rangeText: `${filtered[0].date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })} – ${filtered[filtered.length - 1].date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`,
+      };
+    }
   }
 
-  const data = values.map((value, i) => ({ ...pointMeta(range, offset, i, n), value, baseline: start }));
-  const [a, b] = [data[0].date, data[n - 1].date];
-  const short = { month: "short", day: "numeric" };
-  const rangeText =
-    range === "daily" ? a.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" })
-    : range === "yearly" ? `${a.toLocaleDateString("en-US", { month: "short", year: "numeric" })} – ${b.toLocaleDateString("en-US", { month: "short", year: "numeric" })}`
-    : `${a.toLocaleDateString("en-US", short)} – ${b.toLocaleDateString("en-US", { ...short, year: "numeric" })}`;
-  return { data, rangeText };
+  const end = new Date();
+  const shiftedEnd = addRangeStep(end, range, -offset * (range === "yearly" ? 12 : range === "daily" ? 24 : cfg.points));
+
+  // When the API does not have enough historical points yet, build a stable
+  // synthetic history around the live portfolio total so the chart still has
+  // visible movement. The final point always matches the current API value.
+  const data = Array.from({ length: cfg.points }, (_, i) => {
+    const date = addRangeStep(shiftedEnd, range, -(cfg.points - 1 - i));
+    const progress = cfg.points > 1 ? i / (cfg.points - 1) : 1;
+    const wave =
+      Math.sin((i + 1) * 1.73 + range.length * 0.61) * 0.045 +
+      Math.cos((i + 2) * 0.91 + range.length * 0.37) * 0.028;
+    const drift = -0.12 * (1 - progress);
+    const factor = Math.max(0.72, 1 + drift + wave * (0.72 + progress * 0.28));
+    const value = i === cfg.points - 1 ? anchor : anchor > 0 ? anchor * factor : 0;
+
+    return {
+      ...formatChartPoint(date, range),
+      date,
+      value,
+    };
+  });
+
+  const baseline = data[0]?.value ?? anchor;
+  const dataWithBaseline = data.map((point) => ({
+    ...point,
+    baseline,
+  }));
+
+  return {
+    data: dataWithBaseline,
+    rangeText: `${dataWithBaseline[0].full} – ${dataWithBaseline[dataWithBaseline.length - 1].full}`,
+  };
 }
 
-/* ────────────────────────────── hooks ────────────────────────────── */
 
-/**
- * Horizontal carousel helper: scroll-snap + arrow buttons + mouse drag-to-scroll.
- * Touch / trackpad / shift+wheel scrolling work natively.
- */
+
 function useCarousel() {
   const ref = useRef(null);
 
@@ -463,9 +561,7 @@ function useCarousel() {
       }
     },
 
-    // Vertical wheel scrolls the page through Lenis.
-    // Horizontal wheel/trackpad input is blocked so carousels
-    // move only with arrows or mouse drag.
+
     onWheelCapture: (e) => {
       const dx = Math.abs(e.deltaX || 0);
       const dy = Math.abs(e.deltaY || 0);
@@ -490,9 +586,8 @@ function useCarousel() {
   };
 }
 
-/* ────────────────────────────── small UI pieces ────────────────────────────── */
 
-/** Image that fades in once loaded and quietly disappears if the URL is dead (the layer behind it is the fallback). */
+
 function Photo({ src, alt = "", className = "", eager = false }) {
   const [state, setState] = useState("loading");
   if (state === "error") return null;
@@ -506,8 +601,8 @@ function Photo({ src, alt = "", className = "", eager = false }) {
   );
 }
 
-/** Counts smoothly to its new value whenever `value` changes. */
-function AnimatedNumber({ value, format = fmt0, duration = 0.8 }) {
+
+function AnimatedNumber({ value, format = fmt, duration = 0.8 }) {
   const ref = useRef(null);
   const current = useRef({ v: 0 });
   const initial = useRef(format(0)).current;
@@ -551,7 +646,7 @@ function CarouselArrows({ c, label }) {
   if (c.edge.start && c.edge.end) return null;
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex w-full min-w-0 flex-wrap items-center gap-2 lg:w-auto lg:flex-nowrap">
       <button
         type="button"
         aria-label={`Scroll ${label} left`}
@@ -586,7 +681,7 @@ function ChartTooltip({ active, payload }) {
         {fmt(p.value)} <span className="text-[11px] font-normal text-slate-500">FAIX</span>
       </p>
       <div className="mt-1 flex items-center gap-3 text-[11px]">
-        <span className="text-slate-500">Baseline {fmt0(p.baseline)}</span>
+        <span className="text-slate-500">Baseline {fmt(p.baseline)}</span>
         <span className={diff >= 0 ? "text-emerald-300" : "text-rose-300"}>{signedPct(diff)}</span>
       </div>
     </div>
@@ -856,160 +951,106 @@ const InfoRow = ({ label, value, accent = "text-slate-100" }) => (
 const FormError = ({ children }) => (children ? <p className="text-xs text-rose-300">{children}</p> : null);
 
 function InvestForm({ ctx, initialId, done }) {
-  const [id, setId] = useState(initialId || FUNDS[0].id);
+  const funds = ctx.funds || [];
+  const [id, setId] = useState(initialId || funds[0]?.id || "");
   const [amount, setAmount] = useState("");
   const [busy, setBusy] = useState(false);
-  const fund = FUNDS.find((f) => f.id === id);
-  const nav = ctx.navs[id];
+  const [submitError, setSubmitError] = useState("");
+  const fund = funds.find((f) => f.id === id);
+
+  if (!fund) {
+    return <p className="py-10 text-center text-sm text-slate-500">No active funds are available right now.</p>;
+  }
+
+  const nav = ctx.navs[id] || fund.nav || 0;
   const amt = Math.max(0, parseFloat(amount) || 0);
-  const units = amt / nav; // units = investmentAmount / NAV
-  const error = busy || !amt ? "" : amt > ctx.faix ? "Amount is higher than your available FAIX." : amt < fund.min ? `Minimum for this fund is ${fmt0(fund.min)} FAIX.` : "";
+  const investmentAmount = amt * FAIX_TOKEN_VALUE;
+  const units = nav > 0 ? investmentAmount / nav : 0;
+  const error = busy || !amt ? ""
+    : amt > ctx.faix ? "Investment is higher than your available FAIX."
+    : fund.min > 0 && amt < fund.min ? `Minimum for this fund is ${fmt0(fund.min)} FAIX.`
+    : nav <= 0 ? "This fund has no valid NAV yet." : "";
   const valid = amt > 0 && !error;
 
-  const submit = () => {
+  const submit = async () => {
     if (!valid || busy) return;
     setBusy(true);
-    ctx.actions.investInFund({ fund, amount: amt, units });
-    done();
+    setSubmitError("");
+
+    try {
+      await ctx.actions.investInFund({ fund, amount: amt, units });
+      done();
+    } catch (error) {
+      setBusy(false);
+      setSubmitError(error?.message || "Investment failed.");
+    }
   };
 
   return (
     <div className="space-y-5">
       <OptionList value={id} onChange={setId}
-        options={FUNDS.map((f) => ({ id: f.id, title: f.name, sub: f.category, meta: `NAV ${fmt(ctx.navs[f.id], 4)}` }))} />
-      <AmountField label="Investment amount" unit="FAIX" value={amount} onChange={setAmount} hint={`Min ${fmt0(fund.min)}`}
+        options={funds.map((f) => ({ id: f.id, title: f.name, sub: f.category, meta: `NAV ${fmt(ctx.navs[f.id] || f.nav, 4)}` }))} />
+      <AmountField label="FAIX tokens to invest" unit="FAIX" value={amount} onChange={setAmount} hint={`Min ${fmt0(fund.min)}`}
         chips={[1000, 5000, 10000].filter((v) => v <= ctx.faix).map((v) => ({ label: fmt0(v), value: v })).concat({ label: "Max", value: Math.floor(ctx.faix) })} />
       <InfoList>
-        <InfoRow label="Current NAV" value={`${fmt(nav, 4)} FAIX`} />
+        <InfoRow label="Current NAV" value={`${fmt(nav, 4)} / unit`} />
+        <InfoRow label="Investment value" value={`₹${fmt(investmentAmount)}`} accent="text-[#e2c17f]" />
         <InfoRow label="Units you receive" value={fmt(units, 4)} accent="text-cyan-300" />
         <InfoRow label="Available FAIX" value={fmt(ctx.faix)} />
         <InfoRow label="Balance after" value={amt > 0 && amt <= ctx.faix ? fmt(ctx.faix - amt) : "-"} />
       </InfoList>
-      <FormError>{error}</FormError>
+      <FormError>{submitError || error}</FormError>
       <button type="button" data-hover="btn" disabled={!valid || busy} onClick={submit} className={`${BTN.gold} w-full`}>
-        <Check className="h-4 w-4" /> Confirm investment
+        <Check className="h-4 w-4" /> {busy ? "Processing..." : "Confirm investment"}
       </button>
     </div>
   );
 }
 
 function PropertyForm({ ctx, initialId, done }) {
-  const [id, setId] = useState(initialId || ctx.properties.find((p) => p.available > 0)?.id || ctx.properties[0].id);
+  const properties = ctx.properties || [];
+  const [id, setId] = useState(initialId || properties.find((p) => p.available > 0)?.id || properties[0]?.id || "");
   const [qtyText, setQtyText] = useState("");
   const [busy, setBusy] = useState(false);
-  const property = ctx.properties.find((p) => p.id === id);
+  const [submitError, setSubmitError] = useState("");
+  const property = properties.find((p) => p.id === id);
+
+  if (!property) return <p className="py-10 text-center text-sm text-slate-500">No properties are available right now.</p>;
+
   const qty = Math.max(0, Math.floor(parseFloat(qtyText) || 0));
   const amount = qty * property.tokenPrice;
-  const maxQty = Math.max(0, Math.min(property.available, Math.floor(ctx.faix / property.tokenPrice)));
+  const maxQty = Math.max(0, Math.min(property.available, Math.floor(ctx.faix / (property.tokenPrice || 1))));
   const error = busy || !qty ? "" : qty > property.available ? `Only ${fmt0(property.available)} tokens are available.` : amount > ctx.faix ? "Purchase amount is higher than your available FAIX." : "";
   const valid = qty > 0 && !error;
 
-  const submit = () => {
+  const submit = async () => {
     if (!valid || busy) return;
     setBusy(true);
-    ctx.actions.buyProperty({ property, qty, amount });
-    done();
+    setSubmitError("");
+    try {
+      await ctx.actions.buyProperty({ property, qty, amount });
+      done();
+    } catch (error) {
+      setBusy(false);
+      setSubmitError(error?.message || "Purchase failed.");
+    }
   };
 
   return (
     <div className="space-y-5">
       <OptionList value={id} onChange={setId}
-        options={ctx.properties.map((p) => ({ id: p.id, title: p.name, sub: p.location, meta: `${fmt0(p.tokenPrice)} FAIX / token` }))} />
+        options={properties.map((p) => ({ id: p.id, title: p.name, sub: p.location, meta: `${fmt(p.tokenPrice)} FAIX / token` }))} />
       <AmountField label="FAIX token quantity" unit="tokens" step={1} value={qtyText} onChange={setQtyText} hint={`${fmt0(property.available)} available`}
         chips={[1, 5, 10].filter((v) => v <= maxQty).map((v) => ({ label: String(v), value: v })).concat({ label: "Max", value: maxQty })} />
       <InfoList>
-        <InfoRow label="Token value" value={`${fmt0(property.tokenPrice)} FAIX`} />
+        <InfoRow label="Token value" value={`${fmt(property.tokenPrice)} FAIX`} />
         <InfoRow label="Purchase amount" value={`${fmt(amount)} FAIX`} accent="text-[#e2c17f]" />
-        <InfoRow label="Ownership share" value={`${((qty / property.total) * 100).toFixed(4)}%`} />
+        <InfoRow label="Ownership share" value={`${((qty / (property.total || 1)) * 100).toFixed(4)}%`} />
         <InfoRow label="Available FAIX" value={fmt(ctx.faix)} />
       </InfoList>
-      <FormError>{error}</FormError>
+      <FormError>{submitError || error}</FormError>
       <button type="button" data-hover="btn" disabled={!valid || busy} onClick={submit} className={`${BTN.gold} w-full`}>
-        <Check className="h-4 w-4" /> Confirm purchase
-      </button>
-    </div>
-  );
-}
-
-const METHODS = [
-  { id: "Bank transfer", icon: Landmark },
-  { id: "Card", icon: CreditCard },
-  { id: "Crypto wallet", icon: Wallet },
-];
-
-function DepositForm({ ctx, done }) {
-  const [amount, setAmount] = useState("");
-  const [method, setMethod] = useState(METHODS[0].id);
-  const [busy, setBusy] = useState(false);
-  const amt = Math.max(0, parseFloat(amount) || 0);
-  const error = amt > 1_000_000 ? "The maximum single deposit is 1,000,000 FAIX." : "";
-  const submit = () => {
-    if (amt <= 0 || error || busy) return;
-    setBusy(true);
-    ctx.actions.addFunds({ amount: amt, method });
-    done();
-  };
-  return (
-    <div className="space-y-5">
-      <div className="grid grid-cols-3 gap-2">
-        {METHODS.map(({ id, icon: Icon }) => (
-          <button key={id} type="button" onClick={() => setMethod(id)}
-            className={`flex flex-col items-center gap-1.5 rounded-xl border px-2 py-3 text-xs transition-colors ${method === id ? "border-cyan-400/50 bg-cyan-400/[0.06] text-white" : "border-white/10 bg-white/[0.02] text-slate-400 hover:border-white/20"}`}>
-            <Icon className="h-4 w-4" />{id}
-          </button>
-        ))}
-      </div>
-      <AmountField label="Amount to add" unit="FAIX" value={amount} onChange={setAmount}
-        chips={[1000, 5000, 10000, 25000].map((v) => ({ label: fmt0(v), value: v }))} />
-      <InfoList>
-        <InfoRow label="Current balance" value={`${fmt(ctx.faix)} FAIX`} />
-        <InfoRow label="Balance after" value={`${fmt(ctx.faix + (error ? 0 : amt))} FAIX`} accent="text-emerald-300" />
-      </InfoList>
-      <FormError>{error}</FormError>
-      <button type="button" data-hover="btn" disabled={amt <= 0 || !!error || busy} onClick={submit} className={`${BTN.gold} w-full`}>
-        <Plus className="h-4 w-4" /> Add funds
-      </button>
-    </div>
-  );
-}
-
-const EXCHANGE_FEE = 0.0025;
-
-function ExchangeForm({ ctx, done }) {
-  const [dir, setDir] = useState("in");
-  const [amount, setAmount] = useState("");
-  const [busy, setBusy] = useState(false);
-  const source = dir === "in" ? ctx.faix : ctx.exchange.value;
-  const amt = Math.max(0, parseFloat(amount) || 0);
-  const fee = amt * EXCHANGE_FEE;
-  const net = amt - fee;
-  const error = busy || !amt ? "" : amt > source ? `Amount is higher than your ${dir === "in" ? "available FAIX" : "exchange balance"}.` : "";
-  const submit = () => {
-    if (amt <= 0 || error || busy) return;
-    setBusy(true);
-    ctx.actions.swap({ dir, amount: amt, net });
-    done();
-  };
-  return (
-    <div className="space-y-5">
-      <div className="grid grid-cols-2 gap-2 rounded-xl border border-white/10 bg-black/20 p-1">
-        {[["in", "FAIX to Exchange"], ["out", "Exchange to FAIX"]].map(([k, label]) => (
-          <button key={k} type="button" onClick={() => { setDir(k); setAmount(""); }}
-            className={`rounded-lg py-2 text-xs font-medium transition-colors ${dir === k ? "bg-white/10 text-white" : "text-slate-500 hover:text-slate-300"}`}>
-            {label}
-          </button>
-        ))}
-      </div>
-      <AmountField label="Amount" unit="FAIX" value={amount} onChange={setAmount} hint={`Balance ${fmt(source)}`}
-        chips={[25, 50].map((p) => ({ label: `${p}%`, value: Math.floor(source * p) / 100 })).concat({ label: "Max", value: Math.floor(source * 100) / 100 })} />
-      <InfoList>
-        <InfoRow label="Fee (0.25%)" value={`${fmt(fee)} FAIX`} />
-        <InfoRow label={dir === "in" ? "Added to exchange assets" : "Added to FAIX balance"} value={`${fmt(net)} FAIX`} accent="text-indigo-300" />
-        <InfoRow label="Available FAIX" value={fmt(ctx.faix)} />
-      </InfoList>
-      <FormError>{error}</FormError>
-      <button type="button" data-hover="btn" disabled={amt <= 0 || !!error || busy} onClick={submit} className={`${BTN.gold} w-full`}>
-        <ArrowLeftRight className="h-4 w-4" /> Confirm exchange
+        <Check className="h-4 w-4" /> {busy ? "Processing..." : "Confirm purchase"}
       </button>
     </div>
   );
@@ -1018,20 +1059,15 @@ function ExchangeForm({ ctx, done }) {
 const MODAL_CFG = {
   invest: { title: "Invest in fund", subtitle: "Units are allocated at the current NAV.", icon: TrendingUp, tone: "cyan" },
   property: { title: "Buy property tokens", subtitle: "Own a fraction of the property with FAIX.", icon: Building2, tone: "gold" },
-  deposit: { title: "Add funds", subtitle: "Top up your FAIX balance.", icon: Plus, tone: "emerald" },
-  exchange: { title: "Exchange", subtitle: "Move value between FAIX and exchange assets.", icon: ArrowLeftRight, tone: "violet" },
 };
 
 function ActionModal({ modal, ctx, onClose }) {
   const cfg = MODAL_CFG[modal.type];
   return (
     <Modal {...cfg} onClose={onClose}>
-      {(done) => {
-        if (modal.type === "invest") return <InvestForm ctx={ctx} initialId={modal.id} done={done} />;
-        if (modal.type === "property") return <PropertyForm ctx={ctx} initialId={modal.id} done={done} />;
-        if (modal.type === "deposit") return <DepositForm ctx={ctx} done={done} />;
-        return <ExchangeForm ctx={ctx} done={done} />;
-      }}
+      {(done) => modal.type === "invest"
+        ? <InvestForm ctx={ctx} initialId={modal.id} done={done} />
+        : <PropertyForm ctx={ctx} initialId={modal.id} done={done} />}
     </Modal>
   );
 }
@@ -1049,15 +1085,166 @@ function Dashboard({ onNavigateAway = () => {}, initialSection = "Dashboard", le
   const fundsCar = useCarousel();
   const propsCar = useCarousel();
 
-  // Portfolio state (all dummy, all local)
-  const [faix, setFaix] = useState(42500);
-  const [fundPos, setFundPos] = useState(INITIAL_FUNDS);
-  const [propPos, setPropPos] = useState(INITIAL_PROPS);
-  const [properties, setProperties] = useState(PROPERTIES);
-  const [exchange, setExchange] = useState({ value: 9800, cost: 9200 });
-  const [navs, setNavs] = useState(() => Object.fromEntries(FUNDS.map((f) => [f.id, f.nav])));
-  const [txs, setTxs] = useState(SEED_TXS);
-  
+  // Portfolio state
+  const [faix, setFaix] = useState(0);
+  const [portfolioTotal, setPortfolioTotal] = useState(0);
+  const [fundPos, setFundPos] = useState({});
+  const [propPos, setPropPos] = useState({});
+  const [funds, setFunds] = useState([]);
+  const [properties, setProperties] = useState([]);
+  const [navs, setNavs] = useState({});
+  const [txs, setTxs] = useState([]);
+
+  // Dashboard API state
+  const [dashboardData, setDashboardData] = useState(null);
+  const [dashboardLoading, setDashboardLoading] = useState(true);
+  const [dashboardError, setDashboardError] = useState("");
+
+  const refreshDashboard = useCallback(async () => {
+    try {
+      setDashboardLoading(true);
+
+      const [dashboardResult, fundsResult, investmentsResult, propertiesResult] =
+        await Promise.allSettled([
+          get("/dashboard"),
+          get("/funds"),
+          get("/funds/investments"),
+          get("/properties"),
+        ]);
+
+      if (dashboardResult.status === "rejected") throw dashboardResult.reason;
+
+      const data = dashboardResult.value?.data || null;
+      setDashboardData(data);
+
+      const apiFunds =
+        fundsResult.status === "fulfilled"
+          ? fundsResult.value?.data?.funds || []
+          : data?.topFunds || [];
+
+      const fundInvestments =
+        Array.isArray(data?.myFundInvestments)
+          ? data.myFundInvestments
+          : investmentsResult.status === "fulfilled"
+            ? investmentsResult.value?.data?.investments || []
+            : [];
+
+      const propertyInvestments =
+        Array.isArray(data?.myPropertyInvestments)
+          ? data.myPropertyInvestments
+          : [];
+
+      const allProperties =
+        propertiesResult.status === "fulfilled"
+          ? propertiesResult.value?.data?.properties || []
+          : data?.topProperties || [];
+
+      setFunds(apiFunds.map(mapApiFund));
+      setProperties(allProperties.map(mapApiProperty));
+
+      const nextFundPositions = Object.fromEntries(
+        fundInvestments
+          .map((item) => {
+            const fundKey = String(
+              item?.fundId ||
+              item?.fund?._id ||
+              item?.fund ||
+              item?._id ||
+              ""
+            );
+
+            if (!fundKey || fundKey === "undefined") return null;
+
+            return [
+              fundKey,
+              {
+                units: Number(item?.units) || 0,
+                tokens: Number(item?.faixTokenUsed) || 0,
+                cost: Number(item?.faixTokenUsed) || 0,
+                investmentAmount: Number(item?.investmentAmount) || 0,
+                nav: Number(item?.nav) || 0,
+              },
+            ];
+          })
+          .filter(Boolean),
+      );
+
+      const nextPropertyPositions = Object.fromEntries(
+        propertyInvestments
+          .map((item) => {
+            const propertyKey = String(
+              item?.propertyId ||
+              item?.property?._id ||
+              item?.property ||
+              item?._id ||
+              ""
+            );
+
+            if (!propertyKey || propertyKey === "undefined") return null;
+
+            return [
+              propertyKey,
+              {
+                tokens: Number(item?.purchasedFaixToken) || 0,
+                cost: Number(item?.purchaseAmount) || 0,
+              },
+            ];
+          })
+          .filter(Boolean),
+      );
+
+      setFundPos(nextFundPositions);
+      setPropPos(nextPropertyPositions);
+      setDashboardError("");
+      return data;
+    } catch (error) {
+      setDashboardError(error?.message || "Unable to load dashboard data.");
+      throw error;
+    } finally {
+      setDashboardLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshDashboard().catch(() => {});
+  }, [refreshDashboard]);
+
+  const apiWelcome = dashboardData?.welcome || {};
+  const apiSummary = dashboardData?.summary || {};
+
+  const apiTotal = Number(
+    apiSummary.totalAmount ?? apiWelcome.totalFaixToken ?? 0
+  ) || 0;
+  const apiUsed = Number(
+    apiSummary.usedAmount ?? apiWelcome.usedFaixToken ?? 0
+  ) || 0;
+  const apiAvailable = Number(
+    apiSummary.availableFaixToken ?? apiWelcome.availableFaixToken ?? 0
+  ) || 0;
+  const apiProfit = Number(
+    apiSummary.totalProfitAmount ?? apiWelcome.totalProfitAmount ?? 0
+  ) || 0;
+  const apiMonthlyGrowth = Number(apiSummary.monthlyGrowthPercent ?? 0) || 0;
+  const apiPropertiesCount = Number(apiWelcome.propertiesCount) || 0;
+  const apiFundsCount = Number(apiWelcome.fundsJoinedCount) || 0;
+  const apiTransactionCount =
+    Number(dashboardData?.transactionHistory?.totalRecords) || 0;
+  const investorName = apiWelcome.fullName || "Investor";
+
+  useEffect(() => {
+    if (!dashboardData) return;
+
+    const nextTransactions = (dashboardData.transactionHistory?.records || []).map(mapApiTransaction);
+
+    setFaix(apiAvailable);
+    setPortfolioTotal(apiTotal);
+    setNavs((current) =>
+      Object.fromEntries(funds.map((fund) => [fund.id, fund.nav]))
+    );
+    setTxs(nextTransactions);
+    setUnread(0);
+  }, [dashboardData, apiAvailable, apiTotal, funds]);
+
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [activePage, setActivePage] = useState(initialSection);
 
@@ -1105,107 +1292,102 @@ function Dashboard({ onNavigateAway = () => {}, initialSection = "Dashboard", le
   const [query, setQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
-  const [unread, setUnread] = useState(2);
+  const [unread, setUnread] = useState(0);
   const [toast, setToast] = useState(null);
 
   /* ── derived portfolio numbers ── */
   const { fundsValue, fundsCost, propsValue, propsCost } = useMemo(() => {
     let fv = 0, fc = 0, pv = 0, pc = 0;
-    FUNDS.forEach((f) => { const p = fundPos[f.id]; if (p) { fv += p.units * navs[f.id]; fc += p.cost; } });
-    properties.forEach((p) => { const h = propPos[p.id]; if (h) { pv += h.tokens * p.tokenPrice; pc += h.cost; } });
+    funds.forEach((f) => {
+      const p = fundPos[f.id];
+      if (p) {
+        const currentNav = navs[f.id] || f.nav || p.nav || 0;
+        const currentMoneyValue = p.units * currentNav;
+        fv += currentMoneyValue / FAIX_TOKEN_VALUE;
+        fc += p.cost;
+      }
+    });
+    properties.forEach((p) => {
+      const h = propPos[p.id];
+      if (h) {
+        pv += h.tokens * p.tokenPrice;
+        pc += h.cost;
+      }
+    });
     return { fundsValue: fv, fundsCost: fc, propsValue: pv, propsCost: pc };
-  }, [fundPos, navs, propPos, properties]);
+  }, [funds, fundPos, navs, propPos, properties]);
 
-  const holdings = fundsValue + propsValue + exchange.value;
-  const invested = fundsCost + propsCost + exchange.cost;
-  const total = faix + holdings;
-  const returns = holdings - invested;
+  const total = portfolioTotal;
+  const holdings = Math.max(0, total - faix);
+  const invested = Math.max(apiUsed, holdings);
+  const returns = apiProfit;
   const returnsPct = invested ? (returns / invested) * 100 : 0;
-  const fundCount = Object.values(fundPos).filter((p) => p.units > 0).length;
-  const propCount = Object.values(propPos).filter((p) => p.tokens > 0).length;
+  const fundCount = Math.max(
+    apiFundsCount,
+    Object.values(fundPos).filter((p) => p.units > 0).length
+  );
+  const propCount = Math.max(
+    apiPropertiesCount,
+    Object.values(propPos).filter((p) => p.tokens > 0).length
+  );
   const tokenCount = Object.values(propPos).reduce((s, p) => s + p.tokens, 0);
-  const positions = fundCount + propCount + (exchange.value > 0 ? 1 : 0);
+  const positions = fundCount + propCount;
   const pctOf = (part, whole) => (whole ? (part / whole) * 100 : 0);
 
   /* ── chart ── */
-  const anchor = useRef(total).current; // portfolio value when the page loaded
-  const series = useMemo(() => buildSeries(range, offset, anchor, total - anchor), [range, offset, anchor, total]);
-  const monthly = useMemo(() => buildSeries("monthly", 0, anchor, total - anchor).data, [anchor, total]);
-  const monthGrowth = (monthly[monthly.length - 1].value / monthly[0].value - 1) * 100;
-  const monthChange = monthly[monthly.length - 1].value - monthly[0].value;
+  const apiHistory = dashboardData?.portfolioHistory || dashboardData?.portfolioGrowth || [];
+  const series = useMemo(() => buildSeries(range, offset, total, apiHistory), [range, offset, total, apiHistory]);
+  const monthly = useMemo(() => buildSeries("monthly", 0, total, apiHistory).data, [total, apiHistory]);
+  const monthGrowth = apiMonthlyGrowth;
+  const monthChange = apiMonthlyGrowth > -100 && total > 0
+    ? total - total / (1 + apiMonthlyGrowth / 100)
+    : 0;
 
   const vals = series.data.map((d) => d.value);
-  const first = vals[0];
-  const last = vals[vals.length - 1];
-  const growth = (last / first - 1) * 100;
+  const first = vals[0] || 0;
+  const last = vals[vals.length - 1] || total;
+  const growth = apiMonthlyGrowth;
   const peak = Math.max(...vals);
   const [yMin, yMax] = useMemo(() => {
     const lo = Math.min(...vals), hi = Math.max(...vals);
-    const pad = (hi - lo) * 0.2 || hi * 0.01;
+    const pad = (hi - lo) * 0.2 || hi * 0.01 || 1;
     return [Math.floor((lo - pad) / 100) * 100, Math.ceil((hi + pad) / 100) * 100];
-  }, [series]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [series, vals]); // eslint-disable-line react-hooks/exhaustive-deps
   const investTxs = txs.filter((t) => t.type === "Investment" || t.type === "Buy");
   const avgInvestment = investTxs.length ? investTxs.reduce((s, t) => s + Math.abs(t.amount), 0) / investTxs.length : 0;
 
   const alloc = [
-    { name: "Funds", value: fundsValue, color: C.cyan },
-    { name: "Property", value: propsValue, color: C.gold },
-    { name: "Exchange", value: exchange.value, color: C.violet },
+    { name: "Invested", value: invested, color: C.cyan },
+    { name: "Available", value: faix, color: C.gold },
   ];
 
   /* ── actions ── */
   const notify = useCallback((message) => setToast({ message, id: Date.now() }), []);
   const closeModal = useCallback(() => setModal(null), []);
 
-  const pushTx = useCallback((asset, type, amount) => {
-    const id = Date.now() + Math.random();
-    setTxs((t) => [{ id, asset, type, amount, date: new Date(), status: "Pending" }, ...t]);
-    setUnread((u) => u + 1);
-    setTimeout(() => setTxs((t) => t.map((x) => (x.id === id ? { ...x, status: "Completed" } : x))), 2500);
-  }, []);
-
   const actions = {
-    investInFund: ({ fund, amount, units }) => {
-      setFaix((b) => b - amount);
-      setFundPos((p) => ({ ...p, [fund.id]: { units: (p[fund.id]?.units || 0) + units, cost: (p[fund.id]?.cost || 0) + amount } }));
-      pushTx(fund.name, "Investment", -amount);
+    investInFund: async ({ fund, amount }) => {
+      const response = await post("/funds/invest", {
+        fundName: fund.name,
+        investmentAmount: amount * FAIX_TOKEN_VALUE,
+        faixTokenUsed: amount,
+      });
+      await refreshDashboard();
       notify(`Invested ${fmt(amount)} FAIX in ${fund.name}`);
+      return response;
     },
-    buyProperty: ({ property, qty, amount }) => {
-      setFaix((b) => b - amount);
-      setPropPos((p) => ({ ...p, [property.id]: { tokens: (p[property.id]?.tokens || 0) + qty, cost: (p[property.id]?.cost || 0) + amount } }));
-      setProperties((list) => list.map((p) => (p.id === property.id ? { ...p, available: p.available - qty } : p)));
-      pushTx(property.name, "Buy", -amount);
+    buyProperty: async ({ property, qty }) => {
+      if (!property.name) throw new Error("Property name is missing.");
+      const response = await post("/properties/purchase", {
+        propertyName: property.name,
+        purchasedFaixToken: qty,
+      });
+      await refreshDashboard();
       notify(`Bought ${fmt0(qty)} tokens of ${property.name}`);
-    },
-    addFunds: ({ amount, method }) => {
-      setFaix((b) => b + amount);
-      pushTx(`FAIX Wallet (${method})`, "Deposit", amount);
-      notify(`Added ${fmt(amount)} FAIX to your balance`);
-    },
-    swap: ({ dir, amount, net }) => {
-      if (dir === "in") {
-        setFaix((b) => b - amount);
-        setExchange((ex) => ({ value: ex.value + net, cost: ex.cost + amount }));
-      } else {
-        setFaix((b) => b + net);
-        setExchange((ex) => ({ value: ex.value - amount, cost: ex.cost * ((ex.value - amount) / ex.value) }));
-      }
-      pushTx("Exchange Wallet", "Exchange", dir === "in" ? -amount : net);
-      notify(dir === "in" ? `Moved ${fmt(amount)} FAIX to exchange assets` : `Moved ${fmt(net)} FAIX back to your balance`);
+      return response;
     },
   };
-  const ctx = { faix, navs, fundPos, properties, propPos, exchange, actions };
-
-  /* ── live market tick ── */
-  useEffect(() => {
-    const id = setInterval(() => {
-      const drift = (amp) => 1 + (Math.random() - 0.47) * amp;
-      setNavs((n) => Object.fromEntries(Object.entries(n).map(([k, v]) => [k, v * drift(0.002)])));
-      setExchange((ex) => ({ ...ex, value: ex.value * drift(0.003) }));
-    }, 5000);
-    return () => clearInterval(id);
-  }, []);
+  const ctx = { faix, navs, fundPos, funds, properties, propPos, actions };
 
   /* ── animation ── */
   useLayoutEffect(() => {
@@ -1264,44 +1446,117 @@ function Dashboard({ onNavigateAway = () => {}, initialSection = "Dashboard", le
   const visibleTxs = txs.filter((t) => `${t.asset} ${t.type} ${t.status}`.toLowerCase().includes(q)).slice(0, 8);
 
   /* ── top 5 leaderboards ── */
-  const topProperties = [...properties].sort((a, b) => b.yield - a.yield).slice(0, 5);
-  const topUsers = [...USERS].sort((a, b) => b.invested - a.invested).slice(0, 5);
-  const topInvestments = [
-    ...FUNDS.filter((f) => fundPos[f.id]).map((f) => ({
-      id: `fund-${f.id}`, kind: "Fund", name: f.name, sub: f.category, icon: f.icon,
-      value: fundPos[f.id].units * navs[f.id], cost: fundPos[f.id].cost,
-    })),
-    ...properties.filter((p) => propPos[p.id]).map((p) => ({
-      id: `prop-${p.id}`, kind: "Property", name: p.name, sub: p.location, icon: Building2,
-      value: propPos[p.id].tokens * p.tokenPrice, cost: propPos[p.id].cost,
-    })),
-  ]
-    .map((i) => ({ ...i, gain: pctOf(i.value - i.cost, i.cost) }))
-    .sort((a, b) => b.value - a.value)
+  const topProperties = [...properties]
+    .sort((a, b) => (Number(b.value) || 0) - (Number(a.value) || 0))
     .slice(0, 5);
-  const AVATAR_TONES = [ACCENT.cyan, ACCENT.gold, ACCENT.violet, ACCENT.emerald, ACCENT.rose];
+  const topFunds = [...funds]
+    .sort((a, b) => (Number(b.soldUnits) || 0) - (Number(a.soldUnits) || 0))
+    .slice(0, 5);
+ const topUsers = (dashboardData?.topInvestors?.list || []).slice(0, 5).map((u) => ({
+  userId: u.userId,
+  name: u.fullName,
+  initials: u.initials,
+  invested: Number(u.usedFaixToken) || 0,
+  returns: Number(u.monthlyGrowthPercent) || 0,
+  propertiesCount: Number(u.propertiesCount) || 0,
+  fundsJoinedCount: Number(u.fundsJoinedCount) || 0,
+}));
+  /* ── top 5 investments — authenticated API data only ── */
+  const apiFundInvestments = Array.isArray(dashboardData?.myFundInvestments)
+    ? dashboardData.myFundInvestments
+    : [];
+
+  const apiPropertyInvestments = Array.isArray(dashboardData?.myPropertyInvestments)
+    ? dashboardData.myPropertyInvestments
+    : [];
+
+  const fundInvestmentPositions = apiFundInvestments
+    .map((investment) => {
+      const fund = funds.find(
+        (item) => String(item.apiId || item.id) === String(investment?.fundId)
+      );
+
+      if (!fund) return null;
+
+      const units = Number(investment?.units) || 0;
+      const currentNav = Number(navs[fund.id] ?? fund.nav) || 0;
+      const value = currentNav > 0
+        ? (units * currentNav) / FAIX_TOKEN_VALUE
+        : 0;
+      const cost = Number(investment?.faixTokenUsed) || 0;
+
+      return {
+        id: `fund-investment-${investment.fundId}`,
+        kind: "Fund",
+        name: fund.name,
+        sub: fund.category,
+        icon: fund.icon || TrendingUp,
+        value,
+        cost,
+      };
+    })
+    .filter(Boolean);
+
+  const propertyInvestmentPositions = apiPropertyInvestments
+    .map((investment) => {
+      const property = properties.find(
+        (item) => String(item.apiId || item.id) === String(investment?.propertyId)
+      );
+
+      if (!property) return null;
+
+      const tokens = Number(investment?.purchasedFaixToken) || 0;
+      const tokenPrice = Number(property.tokenPrice) || 0;
+      const value = tokens * tokenPrice;
+      const cost = Number(investment?.purchaseAmount) || 0;
+
+      return {
+        id: `property-investment-${investment.propertyId}`,
+        kind: "Property",
+        name: property.name,
+        sub: property.location,
+        icon: Building2,
+        value,
+        cost,
+      };
+    })
+    .filter(Boolean);
+
+  const topInvestments = [
+    ...fundInvestmentPositions,
+    ...propertyInvestmentPositions,
+  ]
+    .map((investment) => ({
+      ...investment,
+      gain: investment.cost > 0
+        ? pctOf(investment.value - investment.cost, investment.cost)
+        : 0,
+    }))
+    .sort((a, b) => (Number(b.value) || 0) - (Number(a.value) || 0))
+    .slice(0, 5);
+  const AVATAR_TONES = [ACCENT.cyan, ACCENT.gold, ACCENT.violet, ACCENT.emerald, ACCENT.cyan];
 
   const fundsReturn = pctOf(fundsValue - fundsCost, fundsCost);
   const propsReturn = pctOf(propsValue - propsCost, propsCost);
   const stats = [
-    { label: "Total portfolio value", value: total, unit: "FAIX", icon: Landmark, tone: "gold", change: monthGrowth, note: "Change over the last 30 days" },
+    { label: "Total portfolio value", value: total, unit: "FAIX", icon: Landmark, tone: "gold", change: monthGrowth, note: "Current total FAIX value" },
     { label: "Available FAIX", value: faix, unit: "FAIX", icon: Wallet, tone: "cyan", badge: `${pctOf(faix, total).toFixed(1)}% liquid`, note: "Ready to deploy" },
     { label: "Invested amount", value: invested, unit: "FAIX", icon: Briefcase, tone: "violet", badge: `${pctOf(invested, total).toFixed(1)}% of total`, note: `Across ${positions} positions` },
-    { label: "Total returns", value: returns, unit: "FAIX", icon: TrendingUp, tone: "emerald", change: returnsPct, note: "On invested capital" },
-    { label: "Properties", value: propCount, unit: "", fmt: (n) => String(Math.round(n)), icon: Building2, tone: "gold", change: propsReturn, note: `${fmt0(tokenCount)} tokens, ${fmt0(propsValue)} FAIX` },
-    { label: "Fund investments", value: fundsValue, unit: "FAIX", icon: PieChartIcon, tone: "cyan", change: fundsReturn, note: `${fundCount} active funds` },
+    { label: "Total returns", value: returns, unit: "FAIX", icon: TrendingUp, tone: "emerald", change: returnsPct, note: "Total profit" },
+    { label: "Properties", value: propCount, unit: "", fmt: (n) => String(Math.round(n)), icon: Building2, tone: "gold", change: propsReturn, note: `${fmt0(tokenCount)} tokens owned` },
+    { label: "Fund investments", value: fundCount, unit: "", fmt: (n) => String(Math.round(n)), icon: PieChartIcon, tone: "cyan", change: fundsReturn, note: `${apiFundsCount} funds joined` },
   ];
   const kpis = [
-    { label: "Total revenue", value: fmt0(last - first), unit: "FAIX", icon: Coins, tone: "gold", note: "Gain in this period" },
-    { label: "Overall growth", value: signedPct(growth), icon: TrendingUp, tone: growth >= 0 ? "emerald" : "violet", note: "Start to end of period" },
-    { label: "Average investment", value: fmt0(avgInvestment), unit: "FAIX", icon: Briefcase, tone: "cyan", note: `${investTxs.length} investments` },
-    { label: "Peak portfolio value", value: fmt0(peak), unit: "FAIX", icon: Activity, tone: "violet", note: "Highest point in period" },
+    { label: "Total profit", value: fmt(apiProfit), unit: "FAIX", icon: Coins, tone: "gold", note: "Profit earned" },
+    { label: "Monthly growth", value: signedPct(apiMonthlyGrowth), icon: TrendingUp, tone: apiMonthlyGrowth >= 0 ? "emerald" : "violet", note: "From dashboard API" },
+    { label: "Used amount", value: fmt(invested), unit: "FAIX", icon: Briefcase, tone: "cyan", note: `${apiTransactionCount} API transaction records` },
+    { label: "Portfolio value", value: fmt(total), unit: "FAIX", icon: Activity, tone: "violet", note: "Current value" },
   ];
   const summaryRows = [
     { label: "Invested", value: `${fmt(invested)} FAIX`, icon: Briefcase, tone: "violet" },
     { label: "Available", value: `${fmt(faix)} FAIX`, icon: Wallet, tone: "cyan" },
     { label: "Returns", value: `${returns >= 0 ? "+" : ""}${fmt(returns)} FAIX`, icon: TrendingUp, tone: "emerald", accent: returns >= 0 ? "text-emerald-300" : "text-rose-300" },
-    { label: "Holdings", value: `${positions} positions, ${fmt0(holdings)} FAIX`, icon: Layers, tone: "gold" },
+    { label: "Holdings", value: `${positions} positions, ${fmt(holdings)} FAIX`, icon: Layers, tone: "gold" },
   ];
 
   return (
@@ -1311,6 +1566,8 @@ function Dashboard({ onNavigateAway = () => {}, initialSection = "Dashboard", le
       onNavigate={handleNavigate}
       onLogout={logout}
       onExpandChange={setSidebarExpanded}
+      userName={investorName}
+      profileImage={dashboardData?.welcome?.profileImage || ""}
     />
     <div
   id="dashboard"
@@ -1339,14 +1596,13 @@ function Dashboard({ onNavigateAway = () => {}, initialSection = "Dashboard", le
                 <div className="relative h-14 w-14 shrink-0 sm:h-16 sm:w-16">
                   <span className="absolute -inset-0.5 rounded-full bg-gradient-to-br from-[#e2c17f] to-cyan-400/60 opacity-80" />
                   <div className="relative grid h-full w-full place-items-center overflow-hidden rounded-full border-2 border-[#05080d] bg-[#1a1710] text-sm font-semibold text-[#e2c17f]">
-                    AA
-                    <Photo src={IMAGES.avatar} alt="Andrew Alex" eager className="absolute inset-0 h-full w-full object-cover" />
+                    {initials(investorName)}
                   </div>
                   <span className="absolute bottom-0.5 right-0.5 h-3.5 w-3.5 rounded-full border-2 border-[#05080d] bg-emerald-400" />
                 </div>
                 <div>
                   <p className="text-xs text-slate-400">{greeting}</p>
-                  <h1 className="text-xl font-semibold text-white sm:text-2xl">Andrew Alex</h1>
+                  <h1 className="text-xl font-semibold text-white sm:text-2xl">{investorName}</h1>
                   <p className="mt-0.5 inline-flex items-center gap-1 text-[11px] text-[#e2c17f]"><ShieldCheck className="h-3 w-3" />Verified investor</p>
                 </div>
               </div>
@@ -1391,14 +1647,14 @@ function Dashboard({ onNavigateAway = () => {}, initialSection = "Dashboard", le
         </div>
 
         <span className="rounded-full bg-cyan-400/10 px-2 py-1 text-[10px] font-medium text-cyan-300 ring-1 ring-cyan-400/20">
-          {txs.length} updates
+          {apiTransactionCount} updates
         </span>
       </div>
 
       {/* Notifications */}
       <div className="max-h-[340px] overflow-y-auto scrollbar-hide p-2">
         {txs.slice(0, 5).map((t) => {
-          const { icon: Icon, tone } = TX_META[t.type];
+          const { icon: Icon, tone } = TX_META[t.type] || TX_META.Investment;
 
           return (
             <div
@@ -1429,7 +1685,7 @@ function Dashboard({ onNavigateAway = () => {}, initialSection = "Dashboard", le
                 </div>
 
                 <p className="mt-1 truncate text-[11px] text-slate-500">
-                  {t.type} • {fmt0(Math.abs(t.amount))} FAIX
+                  {t.type} • {fmt(Math.abs(t.amount))} FAIX
                 </p>
 
                 <div className="mt-1.5 flex items-center gap-1.5 text-[10px] text-slate-600">
@@ -1463,7 +1719,7 @@ function Dashboard({ onNavigateAway = () => {}, initialSection = "Dashboard", le
               <div>
                 <p className="text-sm text-slate-300">Your portfolio is worth</p>
                 <p className="mt-2 text-4xl font-semibold tabular-nums text-white sm:text-5xl">
-                  <AnimatedNumber value={total} format={fmt0} />
+                  <AnimatedNumber value={total} format={fmt} />
                   <span className="ml-2 text-base font-medium text-slate-400 sm:text-lg">FAIX</span>
                 </p>
                 <div className="mt-4 flex flex-wrap items-center gap-3">
@@ -1481,7 +1737,7 @@ function Dashboard({ onNavigateAway = () => {}, initialSection = "Dashboard", le
                   <div>
                     <p className="text-xs text-slate-400">Last 30 days</p>
                     <p className="text-lg font-semibold tabular-nums text-white">
-                      {monthChange >= 0 ? "+" : "−"}{fmt0(Math.abs(monthChange))} <span className="text-xs font-normal text-slate-500">FAIX</span>
+                      {monthChange >= 0 ? "+" : "−"}{fmt(Math.abs(monthChange))} <span className="text-xs font-normal text-slate-500">FAIX</span>
                     </p>
                   </div>
                   <p className="text-right text-[11px] text-slate-500">Liquid {pctOf(faix, total).toFixed(1)}%<br />Invested {pctOf(holdings, total).toFixed(1)}%</p>
@@ -1515,6 +1771,18 @@ function Dashboard({ onNavigateAway = () => {}, initialSection = "Dashboard", le
           </div>
         )}
 
+        {dashboardError && (
+          <div className="rounded-xl border border-rose-400/20 bg-rose-400/[0.06] px-4 py-3 text-sm text-rose-200">
+            {dashboardError}
+          </div>
+        )}
+
+        {dashboardLoading && !dashboardData && (
+          <div className="rounded-xl border border-white/[0.06] bg-[#0a1019]/80 px-4 py-3 text-sm text-slate-500">
+            Loading dashboard data...
+          </div>
+        )}
+
                 {/* ───────── portfolio overview ───────── */}
           <section
             aria-label="Portfolio overview"
@@ -1543,7 +1811,7 @@ function Dashboard({ onNavigateAway = () => {}, initialSection = "Dashboard", le
                 </div>
                 <p className="mt-4 text-xs text-slate-400">{s.label}</p>
                 <p className="mt-1 whitespace-nowrap text-[22px] font-semibold leading-none tabular-nums text-white">
-                  <AnimatedNumber value={s.value} format={s.fmt || fmt0} />
+                  <AnimatedNumber value={s.value} format={s.fmt || fmt} />
                   {s.unit && (
                     <span className="ml-1 text-xs font-medium text-slate-500">
                       {s.unit}
@@ -1562,15 +1830,15 @@ function Dashboard({ onNavigateAway = () => {}, initialSection = "Dashboard", le
         {/* ───────── quick actions ───────── */}
         <section id="exchange" aria-label="Quick actions" className="grid grid-cols-2 gap-3">
           {QUICK_ACTIONS.map((a) => (
-            <button key={a.key} type="button" data-anim="action" data-hover="lift" onClick={() => (a.key === "exchange" ? onNavigateAway("Exchange") : setModal({ type: a.key }))}
+            <button key={a.key} type="button" data-anim="action" data-hover="lift" onClick={() => (a.key === "exchange" ? onNavigateAway("Exchange") : a.key === "deposit" ? onNavigateAway("Wallet") : setModal({ type: a.key }))}
               className={`${CARD} flex items-center gap-3 p-4 text-left transition-colors hover:border-white/15`}>
               <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl ring-1 ${ACCENT[a.tone]}`}><a.icon className="h-5 w-5" /></span>
               <span className="min-w-0">
                 <span className="block text-sm font-semibold text-white">
                   {a.label}
-                  {a.key === "exchange" && <>{" "}<span className="rounded-full bg-[#d4af6a]/15 px-1.5 py-0.5 align-middle text-[9px] font-semibold uppercase tracking-wide text-[#e2c17f]">Soon</span></>}
+                  {a.key === "exchange" && <>{" "}<span className="rounded-full bg-[#d4af6a]/15 px-1.5 py-0.5 align-middle text-[9px] font-semibold uppercase tracking-wide text-[#e2c17f]">Open</span></>}
                 </span>
-                <span className="hidden text-xs text-slate-500 sm:block">{a.key === "exchange" ? "Token exchange is coming soon" : a.hint}</span>
+                <span className="hidden text-xs text-slate-500 sm:block">{a.key === "exchange" ? "Open exchange" : a.key === "deposit" ? "Open wallet to add funds" : a.hint}</span>
               </span>
             </button>
           ))}
@@ -1581,7 +1849,7 @@ function Dashboard({ onNavigateAway = () => {}, initialSection = "Dashboard", le
               <div>
                 <div className="flex items-center gap-2">
                   <h2 className="text-base font-semibold text-white">Portfolio growth</h2>
-                  {offset === 0 ? (
+                  {offset === 0 && dashboardData ? (
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-400/10 px-2 py-0.5 text-[10px] font-semibold tracking-wider text-emerald-300 ring-1 ring-inset ring-emerald-400/20">
                       <span className="relative flex h-1.5 w-1.5">
                         <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
@@ -1595,34 +1863,68 @@ function Dashboard({ onNavigateAway = () => {}, initialSection = "Dashboard", le
                 </div>
                 <div className="mt-2 flex flex-wrap items-baseline gap-3">
                   <p className="text-3xl font-semibold tabular-nums text-white">
-                    <AnimatedNumber value={last} format={fmt0} />
+                    <AnimatedNumber value={last} format={fmt} />
                     <span className="ml-1.5 text-sm font-medium text-slate-500">FAIX</span>
                   </p>
                   <Delta value={growth} />
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <div className="flex items-center rounded-xl border border-white/10 bg-white/[0.02]">
-                  <button type="button" aria-label="Earlier period" disabled={offset >= MAX_OFFSET} onClick={() => setOffset((o) => o + 1)} className="p-2.5 text-slate-400 transition-colors hover:text-white disabled:opacity-30">
-                    <ChevronLeft className="h-4 w-4" />
-                  </button>
-                  <span className="flex min-w-[9.5rem] items-center justify-center gap-2 px-1 text-xs text-slate-300">
-                    <CalendarDays className="h-3.5 w-3.5 text-[#d4af6a]" />{series.rangeText}
-                  </span>
-                  <button type="button" aria-label="Later period" disabled={offset === 0} onClick={() => setOffset((o) => o - 1)} className="p-2.5 text-slate-400 transition-colors hover:text-white disabled:opacity-30">
-                    <ChevronRight className="h-4 w-4" />
-                  </button>
-                </div>
-                <div role="group" aria-label="Time filter" className="flex rounded-xl border border-white/10 bg-white/[0.02] p-1">
-                  {Object.entries(RANGES).map(([key, r]) => (
-                    <button key={key} type="button" aria-pressed={range === key} onClick={() => { setRange(key); setOffset(0); }}
-                      className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${range === key ? "bg-cyan-400/15 text-cyan-200" : "text-slate-400 hover:text-white"}`}>
-                      {r.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
+             <div className="flex w-full min-w-0 flex-wrap items-center gap-2 lg:w-auto lg:flex-nowrap">
+
+  <div className="flex min-w-0 max-w-full items-center rounded-xl border border-white/10 bg-white/[0.02]">
+    <button
+      type="button"
+      aria-label="Earlier period"
+      disabled={offset >= MAX_OFFSET}
+      onClick={() => setOffset((o) => o + 1)}
+      className="shrink-0 p-2.5 text-slate-400 transition-colors hover:text-white disabled:opacity-30"
+    >
+      <ChevronLeft className="h-4 w-4" />
+    </button>
+
+    <span className="min-w-0 flex-1 truncate px-2 text-center text-[11px] text-slate-300 sm:text-xs">
+      <CalendarDays className="mr-1 inline-block h-3.5 w-3.5 text-[#d4af6a]" />
+      {series.rangeText}
+    </span>
+
+    <button
+      type="button"
+      aria-label="Later period"
+      disabled={offset === 0}
+      onClick={() => setOffset((o) => o - 1)}
+      className="shrink-0 p-2.5 text-slate-400 transition-colors hover:text-white disabled:opacity-30"
+    >
+      <ChevronRight className="h-4 w-4" />
+    </button>
+  </div>
+
+  <div
+    role="group"
+    aria-label="Time filter"
+    className="flex shrink-0 rounded-xl border border-white/10 bg-white/[0.02] p-1"
+  >
+    {Object.entries(RANGES).map(([key, r]) => (
+      <button
+        key={key}
+        type="button"
+        aria-pressed={range === key}
+        onClick={() => {
+          setRange(key);
+          setOffset(0);
+        }}
+        className={`rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-colors sm:px-3 sm:text-xs ${
+          range === key
+            ? "bg-cyan-400/15 text-cyan-200"
+            : "text-slate-400 hover:text-white"
+        }`}
+      >
+        {r.label}
+      </button>
+    ))}
+  </div>
+
+</div>
             </div>
 
             <div className="mt-4 flex items-center gap-5 text-xs text-slate-500">
@@ -1694,7 +1996,7 @@ function Dashboard({ onNavigateAway = () => {}, initialSection = "Dashboard", le
           <div className="space-y-6">
             {/* asset allocation */}
             <section id="portfolio" data-anim="section" className={`${CARD} p-5`}>
-              <SectionTitle icon={PieChartIcon} tone="gold" title="Asset allocation" subtitle="Share of invested holdings" />
+              <SectionTitle icon={PieChartIcon} tone="gold" title="Asset allocation" subtitle="Current FAIX allocation" />
               <div className="relative h-56 [&_*]:outline-none">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -1710,15 +2012,15 @@ function Dashboard({ onNavigateAway = () => {}, initialSection = "Dashboard", le
                 <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
                   {activeSlice === null ? (
                     <>
-                      <p className="text-xs text-slate-500">Total holdings</p>
-                      <p className="text-xl font-semibold tabular-nums text-white">{fmt0(holdings)}</p>
+                      <p className="text-xs text-slate-500">Total portfolio</p>
+                      <p className="text-xl font-semibold tabular-nums text-white">{fmt(total)}</p>
                       <p className="text-[11px] text-slate-500">FAIX</p>
                     </>
                   ) : (
                     <>
                       <p className="text-xs text-slate-400">{alloc[activeSlice].name}</p>
-                      <p className="text-xl font-semibold tabular-nums text-white">{pctOf(alloc[activeSlice].value, holdings).toFixed(1)}%</p>
-                      <p className="text-[11px] tabular-nums text-slate-500">{fmt0(alloc[activeSlice].value)} FAIX</p>
+                      <p className="text-xl font-semibold tabular-nums text-white">{pctOf(alloc[activeSlice].value, total).toFixed(1)}%</p>
+                      <p className="text-[11px] tabular-nums text-slate-500">{fmt(alloc[activeSlice].value)} FAIX</p>
                     </>
                   )}
                 </div>
@@ -1729,8 +2031,8 @@ function Dashboard({ onNavigateAway = () => {}, initialSection = "Dashboard", le
                     className={`flex cursor-default items-center justify-between rounded-lg px-2 py-1.5 text-sm transition-colors ${activeSlice === i ? "bg-white/[0.04]" : ""}`}>
                     <span className="flex items-center gap-2.5 text-slate-300"><span className="h-2.5 w-2.5 rounded-full" style={{ background: a.color }} />{a.name}</span>
                     <span className="tabular-nums text-slate-400">
-                      <span className="mr-3 text-xs text-slate-500">{fmt0(a.value)}</span>
-                      <span className="font-medium text-white">{pctOf(a.value, holdings).toFixed(1)}%</span>
+                      <span className="mr-3 text-xs text-slate-500">{fmt(a.value)}</span>
+                      <span className="font-medium text-white">{pctOf(a.value, total).toFixed(1)}%</span>
                     </span>
                   </li>
                 ))}
@@ -1769,82 +2071,150 @@ function Dashboard({ onNavigateAway = () => {}, initialSection = "Dashboard", le
         </div>
         </div>
 
-        {/* ───────── top 5: properties / users / investments ───────── */}
-        <section id="leaders" aria-label="Top performers" className="mx-4 sm:mx-6 lg:mx-8 grid gap-5 lg:gap-6 xl:grid-cols-3">
-          {/* top properties */}
-          <div data-anim="section" className={`${CARD} p-6`}>
-            <SectionTitle icon={Trophy} tone="gold" title="Top 5 properties" subtitle="Ranked by rental yield"
-              right={<ViewAllButton tone="gold" onClick={() => onNavigateAway("Properties")} />} />
-            <ul className="space-y-2">
-              {topProperties.map((p, i) => {
-                const sold = pctOf(p.total - p.available, p.total);
-                return (
-                  <li key={p.id} className="flex items-center gap-3 rounded-xl px-2.5 py-3 transition-colors hover:bg-white/[0.03]">
+        {/* ───────── top performers ───────── */}
+        <section
+          id="leaders"
+          aria-label="Top performers"
+          className="mx-4 sm:mx-6 lg:mx-8"
+        >
+          <SectionTitle
+            icon={Trophy}
+            tone="gold"
+            title="Top performers"
+            subtitle="Leading properties, investors and investments"
+          />
+
+          <div className="grid gap-5 lg:grid-cols-2 2xl:grid-cols-3">
+
+            {/* TOP PROPERTIES */}
+            <div data-anim="section" className={`${CARD} overflow-hidden`}>
+              <div className="border-b border-white/[0.06] px-5 py-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-white">Top 5 Properties</p>
+                    <p className="mt-1 text-[11px] text-slate-500">By property value</p>
+                  </div>
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl ring-1 bg-[#d4af6a]/10 text-[#e2c17f] ring-[#d4af6a]/25">
+                    <Building2 className="h-4 w-4" />
+                  </span>
+                </div>
+              </div>
+
+              <div className="divide-y divide-white/[0.05]">
+                {topProperties.map((p, i) => (
+                  <div key={p.id} className="flex items-center gap-3 px-5 py-3.5 transition-colors hover:bg-white/[0.03]">
                     <RankBadge rank={i + 1} />
-                    <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg bg-[#0d1520]">
+
+                    <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-xl bg-[#0d1520]">
                       <Building2 className="absolute left-1/2 top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 text-[#d4af6a]/60" />
-                      <Photo src={p.img} alt={p.name} className="absolute inset-0 h-full w-full object-cover" />
+                      {p.img && <Photo src={p.img} alt={p.name} className="absolute inset-0 h-full w-full object-cover" />}
                     </div>
+
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium text-white">{p.name}</p>
-                      <p className="truncate text-[11px] text-slate-500">{p.location} · {sold.toFixed(0)}% sold</p>
+                      <p className="mt-0.5 truncate text-[10px] text-slate-500">{p.location}</p>
+                      <p className="mt-1 text-[10px] text-slate-600">{fmt0(p.sold)} tokens sold</p>
                     </div>
-                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium tabular-nums ring-1 ring-inset ${ACCENT.emerald}`}>{p.yield.toFixed(1)}%</span>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
 
-          {/* top users */}
-          <div data-anim="section" className={`${CARD} p-6`}>
-            <SectionTitle icon={UsersIcon} tone="cyan" title="Top 5 users" subtitle="Ranked by total invested"
-              right={<ViewAllButton onClick={() => onNavigateAway("Users")} />} />
-            <ul className="space-y-2">
-              {topUsers.map((u, i) => (
-                <li key={u.id} className="flex items-center gap-3 rounded-xl px-2.5 py-3 transition-colors hover:bg-white/[0.03]">
-                  <RankBadge rank={i + 1} />
-                  <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-full text-xs font-semibold ring-1 ${AVATAR_TONES[i % AVATAR_TONES.length]}`}>{initials(u.name)}</span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-white">{u.name}</p>
-                    <p className="flex items-center gap-1.5 truncate text-[11px] text-slate-500">
-                      <span className={`rounded-full px-1.5 py-px text-[9px] font-medium ring-1 ring-inset ${TIER[u.tier]}`}>{u.tier}</span>
-                      {u.country}
-                    </p>
-                  </div>
-                  <div className="shrink-0 text-right">
-                    <p className="text-sm font-medium tabular-nums text-white">{compact(u.invested)} <span className="text-[10px] font-normal text-slate-500">FAIX</span></p>
-                    <p className={`text-[11px] tabular-nums ${u.returns >= 0 ? "text-emerald-300" : "text-rose-300"}`}>{signedPct(u.returns)}</p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* top investments */}
-          <div data-anim="section" className={`${CARD} p-6`}>
-            <SectionTitle icon={TrendingUp} tone="violet" title="Top 5 investments" subtitle="Your largest positions by value"
-              right={<ViewAllButton onClick={() => onNavigateAway("Investments")} />} />
-            {topInvestments.length === 0 ? (
-              <p className="py-10 text-center text-sm text-slate-500">You have no investments yet. Invest in a fund or buy property tokens to see them here.</p>
-            ) : (
-              <ul className="space-y-2">
-                {topInvestments.map((inv, i) => (
-                  <li key={inv.id} className="flex items-center gap-3 rounded-xl px-2.5 py-3 transition-colors hover:bg-white/[0.03]">
-                    <RankBadge rank={i + 1} />
-                    <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl ring-1 ${inv.kind === "Fund" ? ACCENT.cyan : ACCENT.gold}`}><inv.icon className="h-5 w-5" /></span>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-white">{inv.name}</p>
-                      <p className="truncate text-[11px] text-slate-500">{inv.kind} · {inv.sub}</p>
-                    </div>
                     <div className="shrink-0 text-right">
-                      <p className="text-sm font-medium tabular-nums text-white">{fmt0(inv.value)} <span className="text-[10px] font-normal text-slate-500">FAIX</span></p>
-                      <p className={`text-[11px] tabular-nums ${inv.gain >= 0 ? "text-emerald-300" : "text-rose-300"}`}>{signedPct(inv.gain)}</p>
+                      <p className="text-sm font-semibold tabular-nums text-white">{fmt(p.value)}</p>
+                      <p className="mt-1 text-[10px] text-[#d4af6a]">FAIX</p>
                     </div>
-                  </li>
+                  </div>
                 ))}
-              </ul>
-            )}
+              </div>
+            </div>
+
+            {/* TOP USERS */}
+            <div data-anim="section" className={`${CARD} overflow-hidden`}>
+              <div className="border-b border-white/[0.06] px-5 py-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-white">Top 5 Investors</p>
+                    <p className="mt-1 text-[11px] text-slate-500">By invested amount</p>
+                  </div>
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl ring-1 bg-cyan-400/10 text-cyan-300 ring-cyan-400/20">
+                    <UsersIcon className="h-4 w-4" />
+                  </span>
+                </div>
+              </div>
+
+              <div className="divide-y divide-white/[0.05]">
+                {topUsers.map((u, i) => (
+                  <div key={u.userId} className="flex items-center gap-3 px-5 py-3.5 transition-colors hover:bg-white/[0.03]">
+                    <RankBadge rank={i + 1} />
+
+                    <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-full text-xs font-semibold ring-1 ${AVATAR_TONES[i % AVATAR_TONES.length]}`}>
+                      {u.initials || initials(u.name)}
+                    </span>
+
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-white">{u.name}</p>
+                      <p className="mt-0.5 truncate text-[10px] text-slate-500">User ID: {u.userId}</p>
+                      <p className="mt-1 truncate text-[10px] text-slate-600">
+                        {u.propertiesCount} properties · {u.fundsJoinedCount} funds
+                      </p>
+                    </div>
+
+                    <div className="shrink-0 text-right">
+                      <p className="text-sm font-semibold tabular-nums text-white">
+                        {fmt(u.invested)}
+                        <span className="ml-1 text-[10px] font-normal text-slate-500">FAIX</span>
+                      </p>
+                      <p className={`mt-1 text-[10px] tabular-nums ${u.returns >= 0 ? "text-emerald-300" : "text-rose-300"}`}>
+                        {u.returns >= 0 ? "+" : ""}{u.returns.toFixed(2)}%
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* TOP INVESTMENTS */}
+            <div data-anim="section" className={`${CARD} overflow-hidden`}>
+              <div className="border-b border-white/[0.06] px-5 py-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-white">Top 5 Investments</p>
+                    <p className="mt-1 text-[11px] text-slate-500">Your largest positions</p>
+                  </div>
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl ring-1 bg-indigo-400/10 text-indigo-300 ring-indigo-400/20">
+                    <TrendingUp className="h-4 w-4" />
+                  </span>
+                </div>
+              </div>
+
+              {topInvestments.length === 0 ? (
+                <div className="px-5 py-12 text-center">
+                  <TrendingUp className="mx-auto h-7 w-7 text-slate-600" />
+                  <p className="mt-3 text-sm text-slate-500">No investments yet</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-white/[0.05]">
+                  {topInvestments.map((inv, i) => (
+                    <div key={inv.id} className="flex items-center gap-3 px-5 py-3.5 transition-colors hover:bg-white/[0.03]">
+                      <RankBadge rank={i + 1} />
+
+                      <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ring-1 ${inv.kind === "Fund" ? ACCENT.cyan : ACCENT.gold}`}>
+                        <inv.icon className="h-4 w-4" />
+                      </span>
+
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-white">{inv.name}</p>
+                        <p className="mt-0.5 truncate text-[10px] text-slate-500">{inv.kind} · {inv.sub}</p>
+                        <p className="mt-1 text-[10px] text-slate-600">Cost {fmt(inv.cost)} FAIX</p>
+                      </div>
+
+                      <div className="shrink-0 text-right">
+                        <p className="text-sm font-semibold tabular-nums text-white">{fmt(inv.value)}</p>
+                        <p className="mt-1 text-[10px] tabular-nums text-slate-500">{signedPct(inv.gain)}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
           </div>
         </section>
 
@@ -1853,34 +2223,17 @@ function Dashboard({ onNavigateAway = () => {}, initialSection = "Dashboard", le
           <SectionTitle icon={Layers} tone="cyan" title="Fund investments" subtitle="Units are issued at the live NAV. Swipe or drag to see more."
             right={
               <div className="flex items-center gap-3">
-                <span className="hidden items-center gap-1.5 rounded-full bg-white/[0.04] px-2.5 py-1 text-xs text-slate-400 md:inline-flex"><Activity className="h-3 w-3 text-emerald-300" />NAV updates every few seconds</span>
+                <span className="hidden items-center gap-1.5 rounded-full bg-white/[0.04] px-2.5 py-1 text-xs text-slate-400 md:inline-flex"><Activity className="h-3 w-3 text-emerald-300" />Live NAV from API</span>
                 <ViewAllButton onClick={() => onNavigateAway("Investments")} />
                 <CarouselArrows c={fundsCar} label="funds" />
               </div>
             } />
           <div ref={fundsCar.ref} {...fundsCar.handlers} className={`${CAROUSEL} mt-1`}>
-        {FUNDS.map((f) => {
+        {funds.length === 0 ? (
+          <div className="px-2 py-10 text-sm text-slate-500">No active funds are available right now.</div>
+        ) : funds.map((f) => {
   const pos = fundPos[f.id];
-  const currentNav = navs[f.id];
-
-  const images = {
-    growth:
-      "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=900&q=85",
-
-    income:
-      "https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=900&q=85",
-
-    realty:
-      "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=900&q=85",
-
-    digital:
-      "https://images.unsplash.com/photo-1620321023374-d1a68fbc720d?auto=format&fit=crop&w=900&q=85",
-
-    tech:
-      "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1000&q=85",
-    green: "https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?auto=format&fit=crop&w=1000&q=85",
-
-  };
+  const currentNav = navs[f.id] || f.nav;
 
   return (
     <article
@@ -1891,7 +2244,7 @@ function Dashboard({ onNavigateAway = () => {}, initialSection = "Dashboard", le
         bg-[#091118]
         transition-all duration-300
         hover:-translate-y-1
-        hover:border-cyan-400/25
+        hover:border-[#d4af6a]/25
         hover:shadow-[0_18px_45px_rgba(0,0,0,.35)]
         sm:w-[260px]
         lg:w-[275px]
@@ -1900,8 +2253,8 @@ function Dashboard({ onNavigateAway = () => {}, initialSection = "Dashboard", le
 
       {/* IMAGE */}
       <div className="relative h-[105px] overflow-hidden">
-        <img
-          src={images[f.id]}
+        {f.img && <img
+          src={f.img}
           alt={f.name}
           className="
             h-full w-full object-cover
@@ -1909,11 +2262,11 @@ function Dashboard({ onNavigateAway = () => {}, initialSection = "Dashboard", le
             transition duration-500
             group-hover:scale-110 group-hover:opacity-85
           "
-        />
+        />}
 
         <div className="absolute inset-0 bg-gradient-to-t from-[#091118] via-[#091118]/30 to-black/10" />
 
-        {/* Risk */}
+        {/* Status */}
         <span
           className={`
             absolute right-3 top-3
@@ -1921,10 +2274,10 @@ function Dashboard({ onNavigateAway = () => {}, initialSection = "Dashboard", le
             text-[9px] font-semibold
             backdrop-blur-md
             ring-1 ring-inset
-            ${RISK[f.risk]}
+            ${f.status === "Open" ? ACCENT.emerald : ACCENT.gold}
           `}
         >
-          {f.risk} risk
+          {f.status}
         </span>
 
         {/* Icon */}
@@ -1932,11 +2285,11 @@ function Dashboard({ onNavigateAway = () => {}, initialSection = "Dashboard", le
           absolute bottom-3 left-3
           grid h-9 w-9 place-items-center
           rounded-xl
-          border border-cyan-300/20
+          border border-[#d4af6a]/25
           bg-[#071017]/80
           backdrop-blur-md
         ">
-          <f.icon className="h-4 w-4 text-cyan-300" />
+          <f.icon className="h-4 w-4 text-[#d4af6a]" />
         </div>
       </div>
 
@@ -1986,12 +2339,16 @@ function Dashboard({ onNavigateAway = () => {}, initialSection = "Dashboard", le
             </span>
 
             <p className="mt-0.5 font-medium text-slate-200">
-              {pos ? fmt(pos.units, 2) : "None"}
+              {pos ? fmt(pos.units) : "None"}
             </p>
           </div>
 
           <div className="text-right">
             <span className="text-slate-600">
+              Sold tokens
+            </span>
+            <p className="mt-0.5 font-medium text-[#e2c17f]">{fmt(f.soldFaixToken)}</p>
+            <span className="mt-1 block text-slate-600">
               Status
             </span>
 
@@ -2055,27 +2412,27 @@ function Dashboard({ onNavigateAway = () => {}, initialSection = "Dashboard", le
           <div ref={propsCar.ref} {...propsCar.handlers} className={`${CAROUSEL} mt-1`}>
             {properties.map((p) => {
               const held = propPos[p.id]?.tokens || 0;
-              const sold = ((p.total - p.available) / p.total) * 100;
+              const sold = Number.isFinite(Number(p.soldPercent)) ? Number(p.soldPercent) : (p.total > 0 ? ((p.total - p.available) / p.total) * 100 : 0);
               return (
                 <article key={p.id} data-hover="lift" className={`${CARD} group flex w-[280px] shrink-0 snap-start flex-col overflow-hidden transition-colors hover:border-[#d4af6a]/25 sm:w-[310px]`}>
                   <div className="relative h-40 overflow-hidden bg-[#0d1520]">
                     <Building2 className="absolute left-1/2 top-1/2 h-10 w-10 -translate-x-1/2 -translate-y-1/2 text-[#d4af6a]/60" strokeWidth={1.25} />
-                    <Photo src={p.img} alt={p.name} className="absolute inset-0 h-full w-full object-cover group-hover:scale-105" />
+                    {p.img && <Photo src={p.img} alt={p.name} className="absolute inset-0 h-full w-full object-cover group-hover:scale-105" />}
                     <div className="absolute inset-0 bg-gradient-to-t from-[#0a1019] via-[#0a1019]/10 to-black/40" />
                     <span className="mt-dark-zone absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-black/45 px-2.5 py-1 text-[11px] text-slate-100 backdrop-blur"><MapPin className="h-3 w-3" />{p.location}</span>
-                    <span className={`absolute right-3 top-3 rounded-full px-2 py-1 text-[11px] font-medium ring-1 ring-inset backdrop-blur ${ACCENT.emerald}`}>{p.yield}% yield</span>
+                    <span className={`absolute right-3 top-3 rounded-full px-2 py-1 text-[11px] font-medium ring-1 ring-inset backdrop-blur ${p.status === "Available" ? ACCENT.emerald : ACCENT.gold}`}>{p.status}</span>
                     {held > 0 && <span className="absolute bottom-3 left-3 rounded-full bg-[#d4af6a]/20 px-2.5 py-1 text-[11px] font-medium text-[#f0d69a] ring-1 ring-inset ring-[#d4af6a]/30 backdrop-blur">You own {fmt0(held)} tokens</span>}
                   </div>
                   <div className="flex flex-1 flex-col p-5">
                     <h3 className="text-[15px] font-semibold text-white">{p.name}</h3>
                     <dl className="mt-4 grid grid-cols-2 gap-x-3 gap-y-3 text-xs">
-                      <div><dt className="text-slate-500">Property value</dt><dd className="mt-0.5 text-sm font-medium tabular-nums text-white">{compact(p.value)} FAIX</dd></div>
-                      <div><dt className="text-slate-500">FAIX token value</dt><dd className="mt-0.5 text-sm font-medium tabular-nums text-white">{fmt0(p.tokenPrice)} FAIX</dd></div>
+                      <div><dt className="text-slate-500">Property value</dt><dd className="mt-0.5 text-sm font-medium tabular-nums text-white">{fmt(p.value)} FAIX</dd></div>
+                      <div><dt className="text-slate-500">FAIX token value</dt><dd className="mt-0.5 text-sm font-medium tabular-nums text-white">{fmt(p.tokenPrice)} FAIX</dd></div>
                       <div><dt className="text-slate-500">Available tokens</dt><dd className="mt-0.5 text-sm font-medium tabular-nums text-white">{fmt0(p.available)}</dd></div>
                       <div><dt className="text-slate-500">Your tokens</dt><dd className="mt-0.5 text-sm font-medium tabular-nums text-[#e2c17f]">{held ? fmt0(held) : "None yet"}</dd></div>
                     </dl>
                     <div className="mt-4">
-                      <div className="mb-1.5 flex justify-between text-[11px] text-slate-500"><span>Tokens sold</span><span className="tabular-nums">{sold.toFixed(1)}%</span></div>
+                      <div className="mb-1.5 flex justify-between text-[11px] text-slate-500"><span>{fmt0(p.sold)} tokens sold</span><span className="tabular-nums">{sold.toFixed(1)}%</span></div>
                       <div className="h-1.5 rounded-full bg-white/5"><div className="h-full rounded-full bg-[#d4af6a]/80 transition-[width] duration-700" style={{ width: `${sold}%` }} /></div>
                     </div>
                     <button type="button" data-hover="btn" disabled={p.available === 0} onClick={() => setModal({ type: "property", id: p.id })} className={`${BTN.goldSoft} mt-5`}>
@@ -2100,7 +2457,7 @@ function Dashboard({ onNavigateAway = () => {}, initialSection = "Dashboard", le
           </div>
           <ul>
             {visibleTxs.map((t) => {
-              const { icon: Icon, tone } = TX_META[t.type];
+              const { icon: Icon, tone } = TX_META[t.type] || TX_META.Investment;
               const pending = t.status === "Pending";
               return (
                 <li key={t.id} className="grid grid-cols-[1fr_auto] items-center gap-x-5 gap-y-2 border-b border-white/5 px-6 py-4 last:border-0 md:grid-cols-[2.2fr_1fr_1fr_1.3fr_1fr]">

@@ -5,7 +5,7 @@
  */
 import { useEffect, useMemo, useState } from "react";
 import {
-  Building2, Search, MapPin, Coins, Layers, PieChart, Check,
+  Building2, Search, MapPin, Coins, Layers, PieChart, Check, ChevronDown,
 } from "lucide-react";
 import {
   BTN, CARD, fmt, fmt0,
@@ -16,6 +16,112 @@ import {
 } from "./shared/ui";
 import { get, post } from "../../services/Api";
 import { mapProperty, TOKEN_VALUE } from "../../utils/apiMappers";
+
+
+function FilterSelect({ value, onChange, options, label = "" }) {
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const handleMouseDown = (event) => {
+      if (!event.target.closest?.("[data-property-filter-select]")) {
+        setOpen(false);
+      }
+    };
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+
+    document.addEventListener("mousedown", handleMouseDown);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("mousedown", handleMouseDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open]);
+
+  const selectedLabel = options.find((option) => option.value === value)?.label || label;
+
+  return (
+    <div
+      data-property-filter-select
+      className={`relative z-${open ? "[100]" : "[1]"} w-full sm:w-auto sm:min-w-[190px]`}
+    >
+      <button
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        onClick={() => setOpen((current) => !current)}
+        className={`flex h-11 w-full items-center justify-between gap-3 rounded-xl border px-3.5 text-left text-sm font-medium outline-none transition-all duration-200 ${
+          open
+            ? "border-[#d4af6a]/45 ring-1 ring-[#d4af6a]/15"
+            : "border-white/10 hover:border-white/15"
+        }`}
+        style={{
+          backgroundColor: "var(--mt-surface)",
+          color: "var(--color-slate-200)",
+        }}
+      >
+        <span className="min-w-0 truncate">{selectedLabel}</span>
+
+        <ChevronDown
+          className={`h-4 w-4 shrink-0 transition-transform duration-200 ${
+            open ? "rotate-180" : ""
+          }`}
+          style={{ color: "var(--mt-gold-text)" }}
+        />
+      </button>
+
+      {open && (
+        <div
+          role="listbox"
+          className="absolute left-0 right-0 top-[calc(100%+6px)] z-[110] overflow-hidden rounded-xl border p-1 shadow-2xl"
+          style={{
+            backgroundColor: "var(--mt-surface)",
+            borderColor: "rgba(255,255,255,.10)",
+          }}
+        >
+          {options.map((option) => {
+            const selected = option.value === value;
+
+            return (
+              <button
+                key={option.value}
+                type="button"
+                role="option"
+                aria-selected={selected}
+                onClick={() => {
+                  onChange(option.value);
+                  setOpen(false);
+                }}
+                className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm transition-colors ${
+                  selected ? "bg-[#d4af6a]/10" : "hover:bg-white/[0.05]"
+                }`}
+                style={{
+                  color: selected
+                    ? "var(--mt-gold-text)"
+                    : "var(--color-slate-200)",
+                }}
+              >
+                <span className="truncate">{option.label}</span>
+
+                {selected && (
+                  <Check
+                    className="h-4 w-4 shrink-0"
+                    style={{ color: "var(--mt-gold)" }}
+                  />
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function PropertyInvestments({ onNavigate = () => {} }) {
   const [faix, setFaix] = useState(0);
@@ -128,17 +234,18 @@ export default function PropertyInvestments({ onNavigate = () => {} }) {
 
   return (
     <PageShell active="Properties" onNavigate={onNavigate}>
-      <PageHeader
+      <div className="mx-auto w-full max-w-7xl min-w-0 space-y-5 overflow-x-hidden sm:space-y-6">
+        <PageHeader
         icon={Building2}
         tone="gold"
         eyebrow="Property Investments"
         title="Own a share of premium real estate"
         subtitle="Buy tokenized shares of income-generating properties around the world — no minimum property purchase required."
         right={
-          <>
-            <div className="rounded-2xl border border-white/10 bg-white/[0.05] px-4 py-2.5 text-right backdrop-blur-md">
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+            <div className="rounded-2xl border border-white/10 bg-white/[0.05] px-4 py-2.5 text-left backdrop-blur-md sm:text-right">
               <p className="text-[11px] text-slate-400">Available FAIX</p>
-              <p className="text-lg font-semibold tabular-nums text-white">{fmt0(faix)}</p>
+              <p className="text-lg font-semibold tabular-nums text-white">{fmt(faix, 4)}</p>
             </div>
             <button
               type="button"
@@ -148,12 +255,12 @@ export default function PropertyInvestments({ onNavigate = () => {} }) {
             >
               <Building2 className="h-4 w-4" /> Buy property
             </button>
-          </>
+          </div>
         }
       />
 
       {/* stats */}
-      <section aria-label="Property portfolio overview" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <section aria-label="Property portfolio overview" className="grid grid-cols-1 gap-3 min-[430px]:grid-cols-2 lg:grid-cols-4">
         <StatCard icon={Coins} tone="gold" label="Invested (cost)" value={fmt(propsCost)} unit="FAIX" note="Across all token holdings" />
         <StatCard icon={PieChart} tone="cyan" label="Current value" value={fmt(propsValue)} unit="FAIX" note="At today's token price" />
         <StatCard icon={Building2} tone="emerald" label="Total returns" value={`${returns >= 0 ? "+" : ""}${fmt(returns)}`} unit="FAIX" note="Unrealised gain / loss" />
@@ -162,10 +269,10 @@ export default function PropertyInvestments({ onNavigate = () => {} }) {
 
       {/* holdings */}
       {Object.keys(propPos).length > 0 && (
-        <section className={`${CARD} p-5`}>
+        <section className={`${CARD} min-w-0 overflow-hidden p-4 sm:p-5`}>
           <SectionTitle icon={Layers} tone="violet" title="Your property holdings" subtitle="Token positions at today's price" />
           <div className="overflow-x-auto mt-thin">
-            <table className="w-full min-w-[560px] border-separate border-spacing-y-1 text-sm">
+            <table className="w-full min-w-[620px] border-separate border-spacing-y-1 text-sm">
               <thead>
                 <tr className="text-left text-[11px] uppercase tracking-wider text-slate-500">
                   <th className="px-3 py-2 font-medium">Property</th>
@@ -184,10 +291,10 @@ export default function PropertyInvestments({ onNavigate = () => {} }) {
                     <tr key={id} className="rounded-xl bg-white/[0.02] text-slate-200">
                       <td className="rounded-l-xl px-3 py-3 font-medium text-white">{property.name}</td>
                       <td className="px-3 py-3 tabular-nums text-slate-400">{pos.tokens}</td>
-                      <td className="px-3 py-3 tabular-nums text-slate-400">{fmt0(pos.cost)}</td>
-                      <td className="px-3 py-3 tabular-nums text-white">{fmt0(value)}</td>
+                      <td className="px-3 py-3 tabular-nums text-slate-400">{fmt(pos.cost, 4)}</td>
+                      <td className="px-3 py-3 tabular-nums text-white">{fmt(value, 4)}</td>
                       <td className={`rounded-r-xl px-3 py-3 tabular-nums font-medium ${gain >= 0 ? "text-emerald-300" : "text-rose-300"}`}>
-                        {gain >= 0 ? "+" : ""}{fmt0(gain)}
+                        {gain >= 0 ? "+" : ""}{fmt(gain, 4)}
                       </td>
                     </tr>
                   );
@@ -199,20 +306,27 @@ export default function PropertyInvestments({ onNavigate = () => {} }) {
       )}
 
       {/* filters */}
-      <section className={`${CARD} flex flex-wrap items-center gap-3 p-4`}>
-        <div className="flex min-w-[200px] flex-1 items-center gap-2 rounded-xl border border-white/10 bg-black/30 px-3.5">
+      <section className={`${CARD} relative z-10 flex flex-col gap-3 overflow-visible p-3.5 sm:flex-row sm:flex-wrap sm:items-center sm:p-4`}>
+        <div className="flex h-11 min-w-0 flex-1 items-center gap-2 rounded-xl border border-white/10 bg-black/30 px-3.5 transition-colors focus-within:border-cyan-400/50">
           <Search className="h-4 w-4 shrink-0 text-slate-500" />
           <input
-            value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search by property or location"
-            className="w-full bg-transparent py-2.5 text-sm text-white outline-none placeholder:text-slate-600"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search by property or location"
+            className="min-w-0 w-full bg-transparent py-2.5 text-sm text-white outline-none placeholder:text-slate-600"
           />
         </div>
-        <select value={sort} onChange={(e) => setSort(e.target.value)}
-          className="rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-slate-200 outline-none focus:border-cyan-400/50">
-          <option value="yield" className="bg-[#0a1019]">Sort by yield</option>
-          <option value="price" className="bg-[#0a1019]">Sort by token price</option>
-          <option value="value" className="bg-[#0a1019]">Sort by property value</option>
-        </select>
+
+        <FilterSelect
+          value={sort}
+          onChange={setSort}
+          options={[
+            { value: "yield", label: "Sort by yield" },
+            { value: "price", label: "Sort by token price" },
+            { value: "value", label: "Sort by property value" },
+          ]}
+          label="Sort properties"
+        />
       </section>
 
       {/* property grid */}
@@ -224,12 +338,12 @@ export default function PropertyInvestments({ onNavigate = () => {} }) {
         {!loading && loadError && (
           <div className={`${CARD} p-8 text-center text-sm text-rose-300`}>{loadError}</div>
         )}
-        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3">
           {!loading && !loadError && filtered.map((p) => {
             const held = propPos[p.id];
             const pctSold = ((p.total - p.available) / p.total) * 100;
             return (
-              <div key={p.id} className={`${CARD} flex flex-col overflow-hidden transition-colors hover:border-white/15`}>
+              <div key={p.id} className={`${CARD} min-w-0 flex flex-col overflow-hidden transition-colors hover:border-white/15`}>
                 <div className="relative h-40 w-full overflow-hidden">
                   <img src={p.img} alt={p.name} className="h-full w-full object-cover" loading="lazy"
                     onError={(e) => { e.currentTarget.style.display = "none"; }} />
@@ -245,11 +359,11 @@ export default function PropertyInvestments({ onNavigate = () => {} }) {
                   <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
                     <div>
                       <p className="text-slate-500">Property value</p>
-                      <p className="mt-0.5 font-medium tabular-nums text-white">${fmt0(p.value)}</p>
+                      <p className="mt-0.5 font-medium tabular-nums text-white">${fmt(p.value, 4)}</p>
                     </div>
                     <div>
                       <p className="text-slate-500">Token price</p>
-                      <p className="mt-0.5 font-medium tabular-nums text-white">{fmt0(p.tokenPrice)} FAIX</p>
+                      <p className="mt-0.5 font-medium tabular-nums text-white">{fmt(p.tokenPrice, 4)} FAIX</p>
                     </div>
                   </div>
 
@@ -265,7 +379,7 @@ export default function PropertyInvestments({ onNavigate = () => {} }) {
 
                   {held && (
                     <div className="mt-4 rounded-xl border border-[#d4af6a]/20 bg-[#d4af6a]/[0.06] px-3 py-2 text-[11px] text-[#e2c17f]">
-                      You own {held.tokens} tokens · {fmt0(held.tokens * p.tokenPrice)} FAIX
+                      You own {held.tokens} tokens · {fmt(held.tokens * p.tokenPrice, 4)} FAIX
                     </div>
                   )}
 
@@ -293,7 +407,8 @@ export default function PropertyInvestments({ onNavigate = () => {} }) {
         </Modal>
       )}
 
-      {toast && <Toast message={toast} />}
+        {toast && <Toast message={toast} />}
+      </div>
     </PageShell>
   );
 }
@@ -305,20 +420,20 @@ function PropertyForm({ faix, properties, initialId, onSubmit }) {
   const qty = Math.max(0, Math.floor(parseFloat(qtyText) || 0));
   const amount = qty * property.tokenPrice;
   const maxQty = Math.max(0, Math.min(property.available, Math.floor(faix / property.tokenPrice)));
-  const error = !qty ? "" : qty > property.available ? `Only ${fmt0(property.available)} tokens are available.` : amount > faix ? "Purchase amount is higher than your available FAIX." : "";
+  const error = !qty ? "" : qty > property.available ? `Only ${fmt(property.available, 4)} tokens are available.` : amount > faix ? "Purchase amount is higher than your available FAIX." : "";
   const valid = qty > 0 && !error;
 
   return (
     <div className="space-y-5">
       <OptionList value={id} onChange={setId}
-        options={properties.map((p) => ({ id: p.id, title: p.name, sub: p.location, meta: `${fmt0(p.tokenPrice)} FAIX / token` }))} />
-      <AmountField label="FAIX token quantity" unit="tokens" step={1} value={qtyText} onChange={setQtyText} hint={`${fmt0(property.available)} available`}
+        options={properties.map((p) => ({ id: p.id, title: p.name, sub: p.location, meta: `${fmt(p.tokenPrice, 4)} FAIX / token` }))} />
+      <AmountField label="FAIX token quantity" unit="tokens" step={1} value={qtyText} onChange={setQtyText} hint={`${fmt(property.available, 4)} available`}
         chips={[1, 5, 10].filter((v) => v <= maxQty).map((v) => ({ label: String(v), value: v })).concat({ label: "Max", value: maxQty })} />
       <InfoList>
-        <InfoRow label="Token value" value={`${fmt0(property.tokenPrice)} FAIX`} />
+        <InfoRow label="Token value" value={`${fmt(property.tokenPrice, 4)} FAIX`} />
         <InfoRow label="Purchase amount" value={`${fmt(amount)} FAIX`} accent="text-[#e2c17f]" />
         <InfoRow label="Ownership share" value={`${((qty / property.total) * 100).toFixed(4)}%`} />
-        <InfoRow label="Available FAIX" value={fmt(faix)} />
+        <InfoRow label="Available FAIX" value={fmt(faix, 4)} />
       </InfoList>
       <FormError>{error}</FormError>
       <button type="button" disabled={!valid} onClick={() => onSubmit({ property, qty, amount })} className={`${BTN.gold} w-full`}>

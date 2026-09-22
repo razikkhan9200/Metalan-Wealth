@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   LayoutDashboard,
   Briefcase,
@@ -25,9 +25,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useTheme } from "./shared/ThemeContext";
 import { ProfilePanelContent } from "./UserProfilePanel";
 import NotificationPanel from "./NotificationPanel";
+import { get } from "../../services/Api";
 
-const AVATAR =
-  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTY2nu_3BHiQIh0zFe3h10UpT6MYnKJjo0IOoZZIowa--dp-7x_HDNXWl6R&s=10";
 
 const MAIN_NAV = [
   {
@@ -70,11 +69,42 @@ const MAIN_NAV = [
   },
 ];
 
+
+const NOTIFICATION_SEEN_KEY = "metalan_notification_seen_ids";
+const NOTIFICATION_PENDING_KEY = "metalan_notification_pending_ids";
+const NOTIFICATION_READ_KEY = "metalan_read_notifications";
+const NOTIFICATION_POLL_MS = 5000;
+
+function readIdSet(key) {
+  try {
+    const stored = JSON.parse(localStorage.getItem(key) || "[]");
+    return new Set(Array.isArray(stored) ? stored.map(String) : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function writeIdSet(key, ids) {
+  try {
+    localStorage.setItem(key, JSON.stringify([...ids]));
+  } catch {
+    // Keep the UI working if storage is unavailable.
+  }
+}
+
+function getTransactionId(transaction, index) {
+  return String(
+    transaction?._id ||
+    transaction?.id ||
+    `transaction-${index}`
+  );
+}
+
 const ACCOUNT_NAV = [
   {
     label: "Notifications",
     icon: Bell,
-    badge: 2,
+    badge: 0,
   },
   {
     label: "Settings",
@@ -86,20 +116,278 @@ const ACCOUNT_NAV = [
   },
 ];
 
+
 export default function NavigationPanel({
   active = "Dashboard",
   onNavigate = () => {},
   onLogout = () => {},
   onExpandChange = () => {},
+  userName = "",
+  profileImage = "",
 }) {
   const [collapsed, setCollapsed] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
+  const [notificationCount, setNotificationCount] = useState(0);
+
+  const [avatarFailed, setAvatarFailed] = useState(false);
+
+  // API USER
+  const [user, setUser] = useState(null);
+  const [userLoading, setUserLoading] = useState(true);
 
   const { isDark, toggle: toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
+
+
+  /* ============================================================
+     LOAD LOGGED-IN USER FROM API
+  ============================================================ */
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadUser = async () => {
+      try {
+        setUserLoading(true);
+
+        const response = await get("/dashboard");
+
+        if (!mounted) return;
+
+        /*
+          API response expected:
+
+          {
+            data: {
+              welcome: {
+                fullName,
+                username,
+                userId,
+                email,
+                profileImage
+              }
+            }
+          }
+
+          Depending on ApiResponse structure, this safely
+          supports both response.data and response.data.data.
+        */
+
+        const payload =
+          response?.data?.data ||
+          response?.data ||
+          response ||
+          {};
+
+        const welcome =
+          payload?.welcome ||
+          payload?.user ||
+          {};
+
+        setUser({
+          userId:
+            welcome?.userId ||
+            welcome?.id ||
+            "",
+
+          fullName:
+            welcome?.fullName ||
+            welcome?.name ||
+            "",
+
+          username:
+            welcome?.username ||
+            "",
+
+          email:
+            welcome?.email ||
+            "",
+
+          phone:
+            welcome?.phone ||
+            "",
+
+          profileImage:
+            welcome?.profileImage ||
+            welcome?.avatar ||
+            welcome?.image ||
+            "",
+        });
+      } catch (error) {
+        console.error(
+          "NavigationPanel: failed to load user details:",
+          error
+        );
+
+        if (mounted) {
+          setUser(null);
+        }
+      } finally {
+        if (mounted) {
+          setUserLoading(false);
+        }
+      }
+    };
+
+    loadUser();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+
+  /* ============================================================
+     NOTIFICATION BADGE
+     Show a badge only when a genuinely new transaction appears.
+  ============================================================ */
+
+  useEffect(() => {
+    let mounted = true;
+    let initialised = false;
+
+    const syncNotificationBadge = async () => {
+      try {
+        const response = await get("/transactions?page=1&limit=50");
+
+        const payload =
+          response?.data?.data ||
+          response?.data ||
+          response ||
+          {};
+
+        const records =
+          Array.isArray(payload?.records)
+            ? payload.records
+            : Array.isArray(payload)
+              ? payload
+              : [];
+
+        const currentIds = records.map(getTransactionId);
+        const seen = readIdSet(NOTIFICATION_SEEN_KEY);
+        const pending = readIdSet(NOTIFICATION_PENDING_KEY);
+        const read = readIdSet(NOTIFICATION_READ_KEY);
+
+        // First load establishes the existing transactions as the baseline.
+        if (!initialised && seen.size === 0) {
+          currentIds.forEach((id) => seen.add(id));
+          writeIdSet(NOTIFICATION_SEEN_KEY, seen);
+          writeIdSet(NOTIFICATION_PENDING_KEY, new Set());
+
+          if (mounted) setNotificationCount(0);
+          initialised = true;
+          return;
+        }
+
+        initialised = true;
+
+        currentIds.forEach((id) => {
+          if (!seen.has(id)) {
+            seen.add(id);
+
+            if (!read.has(id)) {
+              pending.add(id);
+            }
+          }
+        });
+
+        // A read notification must not become unread again on the next poll.
+        for (const id of pending) {
+          if (read.has(id)) pending.delete(id);
+        }
+
+        writeIdSet(NOTIFICATION_SEEN_KEY, seen);
+        writeIdSet(NOTIFICATION_PENDING_KEY, pending);
+
+        if (mounted) {
+          setNotificationCount(pending.size);
+        }
+      } catch {
+        // Keep the existing badge state when the poll fails.
+      }
+    };
+
+    const syncReadState = () => {
+      const pending = readIdSet(NOTIFICATION_PENDING_KEY);
+      const read = readIdSet(NOTIFICATION_READ_KEY);
+
+      for (const id of pending) {
+        if (read.has(id)) pending.delete(id);
+      }
+
+      writeIdSet(NOTIFICATION_PENDING_KEY, pending);
+
+      if (mounted) setNotificationCount(pending.size);
+    };
+
+    syncNotificationBadge();
+
+    const pollId = window.setInterval(
+      syncNotificationBadge,
+      NOTIFICATION_POLL_MS
+    );
+
+    const readRefreshId = window.setInterval(
+      syncReadState,
+      750
+    );
+
+    window.addEventListener("storage", syncReadState);
+
+    return () => {
+      mounted = false;
+      window.clearInterval(pollId);
+      window.clearInterval(readRefreshId);
+      window.removeEventListener("storage", syncReadState);
+    };
+  }, []);
+
+  /* ============================================================
+     USER DISPLAY DATA
+  ============================================================ */
+
+  const actualUserName =
+    user?.fullName ||
+    userName ||
+    "Investor";
+
+  const displayName =
+    String(actualUserName).trim() || "Investor";
+
+
+  const displayInitials =
+    displayName
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) =>
+        part.charAt(0).toUpperCase()
+      )
+      .join("") || "U";
+
+
+  /*
+    Only show an image if API actually provides one.
+    No hardcoded face/image.
+  */
+
+  const actualProfileImage =
+    user?.profileImage ||
+    profileImage ||
+    "";
+
+
+  useEffect(() => {
+    setAvatarFailed(false);
+  }, [actualProfileImage]);
+
+
+  /* ============================================================
+     THEME
+  ============================================================ */
 
   const sidebarBg = isDark
     ? "bg-[#05080D]/95"
@@ -135,25 +423,30 @@ export default function NavigationPanel({
     ? "bg-[#0A1019]"
     : "bg-white";
 
-  /* ---------------------------------------------------------
+
+  /* ============================================================
      SIDEBAR
-  --------------------------------------------------------- */
+  ============================================================ */
 
   const toggleSidebar = () => {
     setCollapsed((prev) => {
       const next = !prev;
+
       onExpandChange(!next);
+
       return next;
     });
   };
+
 
   const closeMobile = () => {
     setMobileOpen(false);
   };
 
-  /* ---------------------------------------------------------
+
+  /* ============================================================
      NAVIGATION
-  --------------------------------------------------------- */
+  ============================================================ */
 
   const goDashboard = () => {
     closeMobile();
@@ -170,11 +463,14 @@ export default function NavigationPanel({
     }
 
     navigate("/dashboard");
+
     onNavigate("Dashboard");
   };
 
+
   const goPortfolio = () => {
     closeMobile();
+
     onNavigate("Portfolio");
 
     if (location.pathname !== "/dashboard") {
@@ -200,6 +496,7 @@ export default function NavigationPanel({
       });
   };
 
+
   const handleNavigation = (label) => {
     if (label === "Dashboard") {
       goDashboard();
@@ -212,39 +509,49 @@ export default function NavigationPanel({
     }
 
     /*
-      IMPORTANT:
       Avatar does nothing.
-      Settings is the ONLY account item that opens the
-      side User Profile panel.
+      Settings is the ONLY account item
+      that opens the side User Profile panel.
     */
+
     if (label === "Settings") {
       closeMobile();
+
       setProfileOpen(true);
+
       return;
     }
 
+
     if (label === "Notifications") {
       closeMobile();
+
       setNotificationOpen(true);
+
       return;
     }
+
 
     const item = MAIN_NAV.find(
       (entry) => entry.label === label
     );
 
+
     if (item?.path) {
       closeMobile();
+
       navigate(item.path);
+
       onNavigate(label);
     }
 
     // Help & Support intentionally does nothing.
   };
 
-  /* ---------------------------------------------------------
+
+  /* ============================================================
      ACTIVE STATE
-  --------------------------------------------------------- */
+  ============================================================ */
 
   const isActive = (label) => {
     if (label === "Dashboard") {
@@ -254,23 +561,27 @@ export default function NavigationPanel({
       );
     }
 
+
     if (label === "Portfolio") {
       return active === "Portfolio";
     }
+
 
     const item = MAIN_NAV.find(
       (entry) => entry.label === label
     );
 
+
     return Boolean(
       item?.path &&
-        location.pathname.startsWith(item.path)
+      location.pathname.startsWith(item.path)
     );
   };
 
-  /* ---------------------------------------------------------
+
+  /* ============================================================
      NAV BUTTON
-  --------------------------------------------------------- */
+  ============================================================ */
 
   const navButton = (selected) => `
     group relative flex w-full items-center gap-3
@@ -288,9 +599,10 @@ export default function NavigationPanel({
     }
   `;
 
-  /* ---------------------------------------------------------
+
+  /* ============================================================
      MAIN NAV RENDER
-  --------------------------------------------------------- */
+  ============================================================ */
 
   const renderMainNav = (mobile = false) =>
     MAIN_NAV.map(({ label, icon: Icon }) => {
@@ -300,8 +612,14 @@ export default function NavigationPanel({
         <button
           key={label}
           type="button"
-          title={!mobile && collapsed ? label : undefined}
-          onClick={() => handleNavigation(label)}
+          title={
+            !mobile && collapsed
+              ? label
+              : undefined
+          }
+          onClick={() =>
+            handleNavigation(label)
+          }
           className={navButton(selected)}
         >
           <Icon
@@ -321,12 +639,19 @@ export default function NavigationPanel({
             </span>
           )}
 
-          {!mobile && !collapsed && selected && (
-            <span className="ml-auto h-1.5 w-1.5 rounded-full bg-[#D4AF6A]" />
-          )}
+          {!mobile &&
+            !collapsed &&
+            selected && (
+              <span className="ml-auto h-1.5 w-1.5 rounded-full bg-[#D4AF6A]" />
+            )}
         </button>
       );
     });
+
+
+  /* ============================================================
+     RENDER
+  ============================================================ */
 
   return (
     <>
@@ -335,6 +660,15 @@ export default function NavigationPanel({
       ====================================================== */}
 
       <header
+        style={{
+          backgroundColor: isDark
+            ? "rgba(5,8,13,0.97)"
+            : "rgba(246,248,247,0.98)",
+
+          colorScheme: isDark
+            ? "dark"
+            : "light",
+        }}
         className={`
           fixed inset-x-0 top-0 z-50
           flex h-16 items-center justify-between
@@ -374,6 +708,7 @@ export default function NavigationPanel({
           </span>
         </button>
 
+
         <button
           type="button"
           onClick={() =>
@@ -402,6 +737,7 @@ export default function NavigationPanel({
           )}
         </button>
 
+
         {mobileOpen && (
           <div
             className={`
@@ -418,9 +754,11 @@ export default function NavigationPanel({
               {renderMainNav(true)}
             </div>
 
+
             <div
               className={`my-2 border-t ${border}`}
             />
+
 
             <div className="grid grid-cols-3 gap-1.5">
               {ACCOUNT_NAV.map(
@@ -428,7 +766,13 @@ export default function NavigationPanel({
                   label,
                   icon: Icon,
                   badge,
-                }) => (
+                }) => {
+                  const navBadge =
+                    label === "Notifications"
+                      ? notificationCount
+                      : badge;
+
+                  return (
                   <button
                     key={label}
                     type="button"
@@ -452,17 +796,19 @@ export default function NavigationPanel({
                     <span className="relative">
                       <Icon size={17} />
 
-                      {badge > 0 && (
-                        <span className="
-                          absolute -right-2 -top-2
-                          grid h-4 min-w-4
-                          place-items-center
-                          rounded-full
-                          bg-[#D4AF6A]
-                          px-1 text-[9px]
-                          font-bold text-[#1A1305]
-                        ">
-                          {badge}
+                      {navBadge > 0 && (
+                        <span
+                          className="
+                            absolute -right-2 -top-2
+                            grid h-4 min-w-4
+                            place-items-center
+                            rounded-full
+                            bg-[#D4AF6A]
+                            px-1 text-[9px]
+                            font-bold text-[#1A1305]
+                          "
+                        >
+                          {navBadge}
                         </span>
                       )}
                     </span>
@@ -471,9 +817,11 @@ export default function NavigationPanel({
                       {label}
                     </span>
                   </button>
-                )
+                  );
+                }
               )}
             </div>
+
 
             <button
               type="button"
@@ -499,6 +847,7 @@ export default function NavigationPanel({
                 : "Switch to dark mode"}
             </button>
 
+
             <button
               type="button"
               onClick={() => {
@@ -516,17 +865,28 @@ export default function NavigationPanel({
               `}
             >
               <LogOut size={16} />
+
               Sign out
             </button>
           </div>
         )}
       </header>
 
+
       {/* =====================================================
           DESKTOP SIDEBAR
       ====================================================== */}
 
       <aside
+        style={{
+          backgroundColor: isDark
+            ? "rgba(5,8,13,0.97)"
+            : "rgba(246,248,247,0.985)",
+
+          colorScheme: isDark
+            ? "dark"
+            : "light",
+        }}
         className={`
           fixed left-0 top-0 z-50
           hidden h-screen flex-col
@@ -536,12 +896,18 @@ export default function NavigationPanel({
           backdrop-blur-xl
           transition-all duration-300
           md:flex
-          ${collapsed
-            ? "w-[78px]"
-            : "w-[250px]"}
+          ${
+            collapsed
+              ? "w-[78px]"
+              : "w-[250px]"
+          }
         `}
       >
-        {/* LOGO */}
+
+        {/* =====================================================
+            LOGO
+        ====================================================== */}
+
         <div
           className={`
             flex h-[82px] shrink-0 items-center
@@ -571,6 +937,7 @@ export default function NavigationPanel({
               M
             </span>
 
+
             {!collapsed && (
               <span>
                 <p
@@ -591,14 +958,26 @@ export default function NavigationPanel({
           </button>
         </div>
 
-        {/* AVATAR / PROFILE
-            Intentionally NOT clickable. */}
+
+        {/* =====================================================
+            AVATAR / PROFILE
+
+            API USER DATA
+            No hardcoded face
+        ====================================================== */}
+
         <div className="px-3 pt-5">
           <div
             title="Profile"
+            style={{
+              backgroundColor: isDark
+                ? "#0A1019"
+                : "#FFFFFF",
+            }}
             className={`
               w-full rounded-2xl
-              border ${border} ${panelBg}
+              border ${border}
+              ${panelBg}
               p-3
               ${
                 collapsed
@@ -607,16 +986,49 @@ export default function NavigationPanel({
               }
             `}
           >
-            <div className="
-              relative h-10 w-10 shrink-0
-              overflow-hidden rounded-full
-              border border-[#D4AF6A]/40
-            ">
-              <img
-                src={AVATAR}
-                alt="Profile"
-                className={`h-full w-full object-cover ${isDark ? "bg-[#0A1019]" : "bg-white"}`}
-              />
+            <div
+              className={`
+                relative grid h-10 w-10
+                shrink-0 place-items-center
+                overflow-hidden rounded-full
+                border border-[#D4AF6A]/40
+                ${
+                  avatarFailed ||
+                  !actualProfileImage
+                    ? isDark
+                      ? "bg-[#0A1019]"
+                      : "bg-white"
+                    : ""
+                }
+              `}
+            >
+
+              {/* API IMAGE ONLY */}
+              {actualProfileImage &&
+              !avatarFailed ? (
+                <img
+                  src={actualProfileImage}
+                  alt="Profile"
+                  className="h-full w-full object-cover"
+                  onError={() =>
+                    setAvatarFailed(true)
+                  }
+                />
+              ) : (
+                /* INITIALS FROM API USER */
+                <span
+                  aria-hidden="true"
+                  className="
+                    font-semibold
+                    text-[13px]
+                    tracking-wide
+                    text-[#D4AF6A]
+                  "
+                >
+                  {displayInitials}
+                </span>
+              )}
+
 
               <span
                 className={`
@@ -633,6 +1045,7 @@ export default function NavigationPanel({
               />
             </div>
 
+
             {!collapsed && (
               <div className="min-w-0">
                 <p
@@ -641,7 +1054,9 @@ export default function NavigationPanel({
                     font-semibold ${primary}
                   `}
                 >
-                  Andrew Doe
+                  {userLoading
+                    ? "Loading..."
+                    : displayName}
                 </p>
 
                 <div className="mt-1 flex items-center gap-1.5">
@@ -663,7 +1078,11 @@ export default function NavigationPanel({
           </div>
         </div>
 
-        {/* MAIN NAV */}
+
+        {/* =====================================================
+            MAIN NAV
+        ====================================================== */}
+
         <nav
           data-lenis-prevent
           className="
@@ -687,9 +1106,11 @@ export default function NavigationPanel({
             </p>
           )}
 
+
           <div className="space-y-1">
             {renderMainNav()}
           </div>
+
 
           {!collapsed && (
             <p
@@ -704,6 +1125,7 @@ export default function NavigationPanel({
             </p>
           )}
 
+
           <div className="space-y-1">
             {ACCOUNT_NAV.map(
               ({
@@ -711,9 +1133,15 @@ export default function NavigationPanel({
                 icon: Icon,
                 badge,
               }) => {
+                const navBadge =
+                  label === "Notifications"
+                    ? notificationCount
+                    : badge;
+
                 const settingsSelected =
                   label === "Settings" &&
                   profileOpen;
+
 
                 return (
                   <button
@@ -725,9 +1153,7 @@ export default function NavigationPanel({
                         : undefined
                     }
                     onClick={() =>
-                      handleNavigation(
-                        label
-                      )
+                      handleNavigation(label)
                     }
                     className={navButton(
                       settingsSelected
@@ -745,38 +1171,47 @@ export default function NavigationPanel({
                         }
                       />
 
-                      {badge > 0 && (
-                        <span className="
-                          absolute -right-2 -top-2
-                          grid h-4 min-w-4
-                          place-items-center
-                          rounded-full
-                          bg-[#D4AF6A]
-                          px-1 text-[9px]
-                          font-bold text-[#1A1305]
-                        ">
-                          {badge}
+
+                      {navBadge > 0 && (
+                        <span
+                          className="
+                            absolute -right-2 -top-2
+                            grid h-4 min-w-4
+                            place-items-center
+                            rounded-full
+                            bg-[#D4AF6A]
+                            px-1 text-[9px]
+                            font-bold text-[#1A1305]
+                          "
+                        >
+                          {navBadge}
                         </span>
                       )}
                     </span>
 
+
                     {!collapsed && (
                       <span className="flex min-w-0 flex-1 items-center justify-between">
-                        <span className="
-                          truncate text-[13px]
-                          font-medium
-                        ">
+                        <span
+                          className="
+                            truncate text-[13px]
+                            font-medium
+                          "
+                        >
                           {label}
                         </span>
 
-                        {badge > 0 && (
-                          <span className="
-                            ml-auto rounded-full
-                            bg-[#D4AF6A]/10
-                            px-2 py-0.5
-                            text-[9px] font-semibold
-                            text-[#A8792D]
-                          ">
+
+                        {navBadge > 0 && (
+                          <span
+                            className="
+                              ml-auto rounded-full
+                              bg-[#D4AF6A]/10
+                              px-2 py-0.5
+                              text-[9px] font-semibold
+                              text-[#A8792D]
+                            "
+                          >
                             New
                           </span>
                         )}
@@ -789,7 +1224,11 @@ export default function NavigationPanel({
           </div>
         </nav>
 
-        {/* BOTTOM */}
+
+        {/* =====================================================
+            BOTTOM
+        ====================================================== */}
+
         <div
           className={`
             border-t ${border} p-3
@@ -823,6 +1262,7 @@ export default function NavigationPanel({
               <Moon size={18} />
             )}
 
+
             {!collapsed && (
               <span className="text-[13px] font-medium">
                 {isDark
@@ -831,6 +1271,7 @@ export default function NavigationPanel({
               </span>
             )}
           </button>
+
 
           <button
             type="button"
@@ -857,6 +1298,7 @@ export default function NavigationPanel({
               </span>
             )}
           </button>
+
 
           <button
             type="button"
@@ -886,6 +1328,7 @@ export default function NavigationPanel({
             ) : (
               <>
                 <ChevronLeft size={16} />
+
                 <span className="text-[10px] uppercase tracking-wider">
                   Collapse
                 </span>
@@ -895,7 +1338,11 @@ export default function NavigationPanel({
         </div>
       </aside>
 
-      {/* ONLY Settings opens the profile side panel */}
+
+      {/* =====================================================
+          USER PROFILE PANEL
+      ====================================================== */}
+
       {profileOpen && (
         <ProfilePanelContent
           onClose={() =>
@@ -904,7 +1351,11 @@ export default function NavigationPanel({
         />
       )}
 
-      {/* Notifications opens its own right-side panel */}
+
+      {/* =====================================================
+          NOTIFICATIONS
+      ====================================================== */}
+
       {notificationOpen && (
         <NotificationPanel
           onClose={() =>
