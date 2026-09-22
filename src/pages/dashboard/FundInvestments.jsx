@@ -980,62 +980,70 @@ export default function FundInvestments({ onNavigate = () => {} }) {
                         </div>
                       )}
 
-                      {held && (
-                        <div className="mt-3.5 rounded-xl border border-[#d4af6a]/15 bg-[#d4af6a]/[0.03] px-3 py-2.5">
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="min-w-0">
-                              <p className="text-[8px] uppercase tracking-[0.14em] text-slate-500">
-                                Your position
-                              </p>
+                      <div className="mt-3.5 min-h-[76px] rounded-xl border border-[#d4af6a]/15 bg-[#d4af6a]/[0.03] px-3 py-2.5">
+                        {held ? (
+                          <>
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="min-w-0">
+                                <p className="text-[8px] uppercase tracking-[0.14em] text-slate-500">
+                                  Your position
+                                </p>
 
-                              <p className="mt-1 truncate text-[11px] font-medium text-[#e2c17f]">
-                                {fmt(
-                                  held.units,
-                                  4
-                                )}{" "}
-                                units
-                              </p>
+                                <p className="mt-1 truncate text-[11px] font-medium text-[#e2c17f]">
+                                  {fmt(
+                                    held.units,
+                                    4
+                                  )}{" "}
+                                  units
+                                </p>
+                              </div>
+
+                              <div className="shrink-0 text-right">
+                                <p className="text-[8px] text-slate-500">
+                                  Value
+                                </p>
+
+                                <p className="mt-1 text-[11px] font-semibold tabular-nums text-white">
+                                  {fmt(
+                                    currentValue,
+                                    4
+                                  )}{" "}
+                                  FAIX
+                                </p>
+                              </div>
                             </div>
 
-                            <div className="shrink-0 text-right">
-                              <p className="text-[8px] text-slate-500">
-                                Value
-                              </p>
+                            <div className="mt-1.5 flex items-center justify-between gap-2 text-[9px]">
+                              <span className="text-slate-500">
+                                Gain / loss
+                              </span>
 
-                              <p className="mt-1 text-[11px] font-semibold tabular-nums text-white">
+                              <span
+                                className={
+                                  gain >= 0
+                                    ? "font-medium text-emerald-300"
+                                    : "font-medium text-rose-300"
+                                }
+                              >
+                                {gain >= 0
+                                  ? "+"
+                                  : ""}
                                 {fmt(
-                                  currentValue,
+                                  gain,
                                   4
                                 )}{" "}
                                 FAIX
-                              </p>
+                              </span>
                             </div>
+                          </>
+                        ) : (
+                          <div className="flex min-h-[50px] items-center">
+                            <p className="text-[11px] font-medium text-slate-400">
+                              You haven't invested yet
+                            </p>
                           </div>
-
-                          <div className="mt-1.5 flex items-center justify-between gap-2 text-[9px]">
-                            <span className="text-slate-500">
-                              Gain / loss
-                            </span>
-
-                            <span
-                              className={
-                                gain >= 0
-                                  ? "font-medium text-emerald-300"
-                                  : "font-medium text-rose-300"
-                              }
-                            >
-                              {gain >= 0
-                                ? "+"
-                                : ""}
-                              {fmt(
-                                gain,
-                                4
-                              )}{" "}
-                              FAIX
-                            </span>
-                          </div>
-                        </div>
-                      )}
+                        )}
+                      </div>
 
                       <div className="mt-3.5 flex items-center justify-between gap-3 border-t border-white/[0.06] pt-3.5">
                         <div className="min-w-0">
