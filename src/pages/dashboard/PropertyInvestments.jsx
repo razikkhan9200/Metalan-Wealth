@@ -159,7 +159,24 @@ export default function PropertyInvestments({ onNavigate = () => {} }) {
         ]);
         if (cancelled) return;
 
-        const mappedProperties = propertiesRes.data.properties.map(mapProperty);
+        const mappedProperties = propertiesRes.data.properties.map((property, index) => {
+          const mapped = mapProperty(property, index);
+
+          // Keep property imagery consistent with the dashboard.
+          // propertyImage is the primary image everywhere; only fall back
+          // to the first valid image in the images array when it is missing.
+          const primaryImage =
+            property?.propertyImage ||
+            property?.images?.find((image) => image?.url)?.url ||
+            mapped?.img ||
+            "";
+
+          return {
+            ...mapped,
+            img: primaryImage,
+          };
+        });
+
         setFaix(walletRes.data.userTokenSummary.availableFaixToken);
         setProperties(mappedProperties);
 
@@ -377,9 +394,13 @@ export default function PropertyInvestments({ onNavigate = () => {} }) {
                     </div>
                   </div>
 
-                  {held && (
-                    <div className="mt-4 rounded-xl border border-[#d4af6a]/20 bg-[#d4af6a]/[0.06] px-3 py-2 text-[11px] text-[#e2c17f]">
+                  {held ? (
+                    <div className="mt-4 flex min-h-[38px] items-center rounded-xl border border-[#d4af6a]/20 bg-[#d4af6a]/[0.06] px-3 py-2 text-[11px] text-[#e2c17f]">
                       You own {held.tokens} tokens · {fmt(held.tokens * p.tokenPrice, 4)} FAIX
+                    </div>
+                  ) : (
+                    <div className="mt-4 flex min-h-[38px] items-center rounded-xl border border-white/10 bg-white/[0.025] px-3 py-2 text-[11px] text-slate-500">
+                      You haven't invested yet
                     </div>
                   )}
 
