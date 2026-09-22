@@ -80,4 +80,6 @@
 
 /* The app-wide index.css has an un-layered `button,input,select,textarea { font: inherit }`, which
    beats the layered Tailwind text and font utilities. Inside this area let the utilities win again. */
-.mt-root :is(button, input, select, textarea) { font: revert-layer; }
+.mt-root :is(button, input, select, textarea) {
+  font: inherit;
+}

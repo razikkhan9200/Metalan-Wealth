@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+
 import {
   Bell,
   X,
@@ -14,70 +15,311 @@ import {
   Sparkles,
 } from "lucide-react";
 
+import { get } from "../../services/Api";
 import { useTheme } from "./shared/ThemeContext";
 
-const DEFAULT_NOTIFICATIONS = [
-  {
-    id: 1,
-    type: "investment",
-    title: "Investment update",
+
+/* ================================================================
+   HELPERS
+================================================================ */
+
+function formatNotificationTime(value) {
+  if (!value) return "Just now";
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "Just now";
+  }
+
+  const diff = Date.now() - date.getTime();
+
+  const seconds = Math.max(
+    Math.floor(diff / 1000),
+    0
+  );
+
+  if (seconds < 60) {
+    return "Just now";
+  }
+
+  const minutes = Math.floor(
+    seconds / 60
+  );
+
+  if (minutes < 60) {
+    return `${minutes} min${
+      minutes === 1 ? "" : "s"
+    } ago`;
+  }
+
+  const hours = Math.floor(
+    minutes / 60
+  );
+
+  if (hours < 24) {
+    return `${hours} hour${
+      hours === 1 ? "" : "s"
+    } ago`;
+  }
+
+  const days = Math.floor(
+    hours / 24
+  );
+
+  if (days < 7) {
+    return `${days} day${
+      days === 1 ? "" : "s"
+    } ago`;
+  }
+
+  return date.toLocaleDateString(
+    "en-IN",
+    {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    }
+  );
+}
+
+
+function formatAmount(value) {
+  const amount = Number(value || 0);
+
+  return amount.toLocaleString(
+    "en-IN",
+    {
+      maximumFractionDigits: 2,
+    }
+  );
+}
+
+
+/* ================================================================
+   TRANSACTION -> NOTIFICATION
+================================================================ */
+
+function transactionToNotification(
+  transaction,
+  index,
+  readIds = new Set()
+) {
+  const type = String(
+    transaction?.type || ""
+  ).toLowerCase();
+
+  const asset =
+    transaction?.asset ||
+    "Transaction";
+
+  const status =
+    transaction?.status ||
+    "Pending";
+
+  const total =
+    Number(transaction?.total || 0);
+
+  let notificationType = "system";
+  let title = "Transaction update";
+  let message =
+    `${asset} transaction has been recorded.`;
+  let Icon = ArrowUpRight;
+
+
+  /* --------------------------------------------------------------
+     BUY
+  -------------------------------------------------------------- */
+
+  if (
+    type === "buy" ||
+    type === "purchase"
+  ) {
+    notificationType = "investment";
+
+    title = "Investment completed";
+
+    message =
+      `You purchased ${asset} for ₹${formatAmount(
+        total
+      )}.`;
+
+    Icon = BriefcaseBusiness;
+  }
+
+
+  /* --------------------------------------------------------------
+     SELL
+  -------------------------------------------------------------- */
+
+  else if (
+    type === "sell" ||
+    type === "sale"
+  ) {
+    notificationType = "investment";
+
+    title = "Investment sold";
+
+    message =
+      `Your ${asset} sale of ₹${formatAmount(
+        total
+      )} has been recorded.`;
+
+    Icon = ArrowUpRight;
+  }
+
+
+  /* --------------------------------------------------------------
+     DEPOSIT
+  -------------------------------------------------------------- */
+
+  else if (
+    type === "deposit" ||
+    type === "credit" ||
+    type === "add"
+  ) {
+    notificationType = "wallet";
+
+    title = "Wallet deposit";
+
+    message =
+      `₹${formatAmount(
+        total
+      )} has been added to your wallet.`;
+
+    Icon = Wallet;
+  }
+
+
+  /* --------------------------------------------------------------
+     WITHDRAWAL
+  -------------------------------------------------------------- */
+
+  else if (
+    type === "withdraw" ||
+    type === "withdrawal" ||
+    type === "debit"
+  ) {
+    notificationType = "wallet";
+
+    title = "Wallet withdrawal";
+
+    message =
+      `₹${formatAmount(
+        total
+      )} withdrawal has been recorded.`;
+
+    Icon = Wallet;
+  }
+
+
+  /* --------------------------------------------------------------
+     PROPERTY
+  -------------------------------------------------------------- */
+
+  else if (
+    type === "property" ||
+    asset
+      .toLowerCase()
+      .includes("property")
+  ) {
+    notificationType = "investment";
+
+    title = "Property investment";
+
+    message =
+      `Your ${asset} transaction of ₹${formatAmount(
+        total
+      )} has been recorded.`;
+
+    Icon = Building2;
+  }
+
+
+  /* --------------------------------------------------------------
+     FUND
+  -------------------------------------------------------------- */
+
+  else if (
+    type === "fund" ||
+    asset
+      .toLowerCase()
+      .includes("fund")
+  ) {
+    notificationType = "fund";
+
+    title = "Fund activity";
+
+    message =
+      `${asset} transaction of ₹${formatAmount(
+        total
+      )} has been recorded.`;
+
+    Icon = BriefcaseBusiness;
+  }
+
+
+  /* --------------------------------------------------------------
+     SECURITY / OTHER
+  -------------------------------------------------------------- */
+
+  else {
+    notificationType = "system";
+
+    title = `${asset} transaction`;
+
+    message =
+      `${asset} transaction of ₹${formatAmount(
+        total
+      )} has been recorded.`;
+
+    Icon = ArrowUpRight;
+  }
+
+
+  return {
+    id:
+      transaction?._id ||
+      transaction?.id ||
+      `transaction-${index}`,
+
+    type: notificationType,
+
+    title,
+
     message:
-      "Your property portfolio has been updated with the latest token values.",
-    time: "2 min ago",
-    unread: true,
-    icon: Building2,
-  },
-  {
-    id: 2,
-    type: "wallet",
-    title: "Wallet activity",
-    message:
-      "Your recent FAIX wallet activity has been recorded successfully.",
-    time: "1 hour ago",
-    unread: true,
-    icon: Wallet,
-  },
-  {
-    id: 3,
-    type: "fund",
-    title: "Fund performance",
-    message:
-      "A fund in your portfolio posted a new NAV update.",
-    time: "3 hours ago",
-    unread: true,
-    icon: BriefcaseBusiness,
-  },
-  {
-    id: 4,
-    type: "security",
-    title: "Security notice",
-    message:
-      "Your account security settings were checked successfully.",
-    time: "Yesterday",
-    unread: false,
-    icon: ShieldCheck,
-  },
-  {
-    id: 5,
-    type: "system",
-    title: "Portfolio summary ready",
-    message:
-      "Your latest portfolio summary is available on the dashboard.",
-    time: "Yesterday",
-    unread: false,
-    icon: ArrowUpRight,
-  },
-  {
-    id: 6,
-    type: "system",
-    title: "Account reminder",
-    message:
-      "Keep your profile information up to date for a smoother experience.",
-    time: "2 days ago",
-    unread: false,
-    icon: Clock3,
-  },
-];
+      `${message} Status: ${status}.`,
+
+    time: formatNotificationTime(
+      transaction?.date ||
+        transaction?.createdAt
+    ),
+
+    /*
+      Latest transaction starts unread.
+      Existing read state can be handled
+      locally through markOneRead.
+    */
+    unread: !readIds.has(String(
+      transaction?._id ||
+      transaction?.id ||
+      `transaction-${index}`
+    )),
+
+    icon: Icon,
+
+    transactionId:
+      transaction?._id ||
+      transaction?.id,
+
+    transaction,
+  };
+}
+
+
+/* ================================================================
+   TYPE STYLES
+================================================================ */
 
 const TYPE_STYLES = {
   investment: {
@@ -86,54 +328,63 @@ const TYPE_STYLES = {
       border: "rgba(212,175,106,.20)",
       icon: "#D4AF6A",
     },
+
     light: {
       bg: "rgba(168,121,45,.065)",
       border: "rgba(168,121,45,.17)",
       icon: "#A8792D",
     },
   },
+
   wallet: {
     dark: {
       bg: "rgba(34,211,238,.065)",
       border: "rgba(34,211,238,.15)",
       icon: "#22D3EE",
     },
+
     light: {
       bg: "rgba(8,145,178,.06)",
       border: "rgba(8,145,178,.13)",
       icon: "#0891B2",
     },
   },
+
   fund: {
     dark: {
       bg: "rgba(16,185,129,.065)",
       border: "rgba(16,185,129,.15)",
       icon: "#10B981",
     },
+
     light: {
       bg: "rgba(5,150,105,.06)",
       border: "rgba(5,150,105,.13)",
       icon: "#059669",
     },
   },
+
   security: {
     dark: {
       bg: "rgba(139,156,247,.075)",
       border: "rgba(139,156,247,.15)",
       icon: "#8B9CF7",
     },
+
     light: {
       bg: "rgba(99,102,241,.06)",
       border: "rgba(99,102,241,.13)",
       icon: "#6366F1",
     },
   },
+
   system: {
     dark: {
       bg: "rgba(148,163,184,.055)",
       border: "rgba(148,163,184,.12)",
       icon: "#94A3B8",
     },
+
     light: {
       bg: "rgba(100,116,139,.055)",
       border: "rgba(100,116,139,.12)",
@@ -142,52 +393,215 @@ const TYPE_STYLES = {
   },
 };
 
-function relativeClass(isDark, extra = "") {
-  return `${isDark ? "dark" : ""} ${extra}`.trim();
-}
+
+/* ================================================================
+   COMPONENT
+================================================================ */
 
 export default function NotificationPanel({
   onClose = () => {},
-  initialNotifications = DEFAULT_NOTIFICATIONS,
 }) {
   const { isDark } = useTheme();
-  const panelRef = useRef(null);
 
-  const [items, setItems] = useState(() =>
-    initialNotifications.map((item) => ({ ...item }))
-  );
-  const [visible, setVisible] = useState(false);
-  const [closing, setClosing] = useState(false);
+  const panelRef =
+    useRef(null);
 
-  const unreadCount = items.filter(
-    (item) => item.unread
-  ).length;
 
-  const panelBg = isDark ? "#0A1019" : "#FFFFFF";
-  const headerBg = isDark ? "#0A1019" : "#FFFFFF";
-  const cardBg = isDark
-    ? "rgba(255,255,255,.025)"
-    : "#F8FAF9";
+  /* --------------------------------------------------------------
+     STATE
+  -------------------------------------------------------------- */
 
-  const border = isDark
-    ? "rgba(255,255,255,.085)"
-    : "rgba(20,35,29,.09)";
+  const [items, setItems] =
+    useState([]);
 
-  const text = isDark
-    ? "#F4F7F5"
-    : "#17221D";
+  const [loading, setLoading] =
+    useState(true);
 
-  const subText = isDark
-    ? "#C7D0CC"
-    : "#34443D";
+  const [visible, setVisible] =
+    useState(false);
 
-  const muted = isDark
-    ? "#738079"
-    : "#718078";
+  const [closing, setClosing] =
+    useState(false);
 
-  const accent = isDark
-    ? "#D4AF6A"
-    : "#A8792D";
+
+  /* --------------------------------------------------------------
+     UNREAD COUNT
+  -------------------------------------------------------------- */
+
+  const unreadCount =
+    items.filter(
+      (item) => item.unread
+    ).length;
+
+
+  /* --------------------------------------------------------------
+     THEME
+  -------------------------------------------------------------- */
+
+  const panelBg =
+    isDark
+      ? "#0A1019"
+      : "#FFFFFF";
+
+  const headerBg =
+    isDark
+      ? "#0A1019"
+      : "#FFFFFF";
+
+  const cardBg =
+    isDark
+      ? "rgba(255,255,255,.025)"
+      : "#F8FAF9";
+
+  const border =
+    isDark
+      ? "rgba(255,255,255,.085)"
+      : "rgba(20,35,29,.09)";
+
+  const text =
+    isDark
+      ? "#F4F7F5"
+      : "#17221D";
+
+  const subText =
+    isDark
+      ? "#C7D0CC"
+      : "#34443D";
+
+  const muted =
+    isDark
+      ? "#738079"
+      : "#718078";
+
+  const accent =
+    isDark
+      ? "#D4AF6A"
+      : "#A8792D";
+
+  const iconBg =
+    isDark
+      ? "rgba(212,175,106,.075)"
+      : "rgba(168,121,45,.065)";
+
+  const iconBorder =
+    isDark
+      ? "rgba(212,175,106,.22)"
+      : "rgba(168,121,45,.18)";
+
+  const badgeBg =
+    isDark
+      ? "#D4AF6A"
+      : "#B98A2E";
+
+  const badgeText =
+    isDark
+      ? "#1A1305"
+      : "#FFFFFF";
+
+
+  /* ================================================================
+     LOAD TRANSACTIONS FROM API
+  ================================================================ */
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadTransactions() {
+      try {
+        setLoading(true);
+
+        let readIds = new Set();
+        try {
+          const stored = JSON.parse(
+            localStorage.getItem("metalan_read_notifications") || "[]"
+          );
+          if (Array.isArray(stored)) {
+            readIds = new Set(stored.map(String));
+          }
+        } catch {
+          readIds = new Set();
+        }
+
+        const response = await get(
+          "/transactions?page=1&limit=50"
+        );
+
+        const payload =
+          response?.data?.data ||
+          response?.data ||
+          response ||
+          {};
+
+        const records =
+          Array.isArray(
+            payload?.records
+          )
+            ? payload.records
+            : Array.isArray(payload)
+              ? payload
+              : [];
+
+
+        const notifications =
+          records.map(
+            (transaction, index) =>
+              transactionToNotification(
+                transaction,
+                index,
+                readIds
+              )
+          );
+
+
+        if (mounted) {
+          setItems(
+            notifications
+          );
+        }
+      } catch (error) {
+        console.error(
+          "Failed to load transaction notifications:",
+          error
+        );
+
+        if (mounted) {
+          setItems([]);
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    }
+
+
+    loadTransactions();
+
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+
+  /* ================================================================
+     OPEN ANIMATION
+  ================================================================ */
+
+  useEffect(() => {
+    const id =
+      requestAnimationFrame(() => {
+        setVisible(true);
+      });
+
+    return () =>
+      cancelAnimationFrame(id);
+  }, []);
+
+
+  /* ================================================================
+     CLOSE
+  ================================================================ */
 
   const closePanel = () => {
     if (closing) return;
@@ -200,19 +614,20 @@ export default function NotificationPanel({
     }, 260);
   };
 
-  useEffect(() => {
-    const id = requestAnimationFrame(() => {
-      setVisible(true);
-    });
 
-    return () => cancelAnimationFrame(id);
-  }, []);
+  /* ================================================================
+     KEYBOARD
+  ================================================================ */
 
   useEffect(() => {
     panelRef.current?.focus();
 
-    const handleKeyDown = (event) => {
-      if (event.key === "Escape") {
+    const handleKeyDown = (
+      event
+    ) => {
+      if (
+        event.key === "Escape"
+      ) {
         closePanel();
       }
     };
@@ -229,21 +644,40 @@ export default function NotificationPanel({
       );
   });
 
-  useEffect(() => {
-    const body = document.body;
-    const html = document.documentElement;
 
-    const previousBodyOverflow = body.style.overflow;
-    const previousBodyPadding = body.style.paddingRight;
-    const previousHtmlOverflow = html.style.overflow;
+  /* ================================================================
+     BODY SCROLL LOCK
+  ================================================================ */
+
+  useEffect(() => {
+    const body =
+      document.body;
+
+    const html =
+      document.documentElement;
+
+    const previousBodyOverflow =
+      body.style.overflow;
+
+    const previousBodyPadding =
+      body.style.paddingRight;
+
+    const previousHtmlOverflow =
+      html.style.overflow;
 
     const scrollbarWidth =
-      window.innerWidth - html.clientWidth;
+      window.innerWidth -
+      html.clientWidth;
 
-    body.style.overflow = "hidden";
-    html.style.overflow = "hidden";
+    body.style.overflow =
+      "hidden";
 
-    if (scrollbarWidth > 0) {
+    html.style.overflow =
+      "hidden";
+
+    if (
+      scrollbarWidth > 0
+    ) {
       body.style.paddingRight =
         `${scrollbarWidth}px`;
     }
@@ -251,12 +685,19 @@ export default function NotificationPanel({
     return () => {
       body.style.overflow =
         previousBodyOverflow;
+
       body.style.paddingRight =
         previousBodyPadding;
+
       html.style.overflow =
         previousHtmlOverflow;
     };
   }, []);
+
+
+  /* ================================================================
+     MARK ONE READ
+  ================================================================ */
 
   const markOneRead = (id) => {
     setItems((previous) =>
@@ -266,16 +707,60 @@ export default function NotificationPanel({
           : item
       )
     );
+
+    try {
+      const stored = JSON.parse(
+        localStorage.getItem("metalan_read_notifications") || "[]"
+      );
+      const readIds = new Set(
+        Array.isArray(stored) ? stored.map(String) : []
+      );
+      readIds.add(String(id));
+      localStorage.setItem(
+        "metalan_read_notifications",
+        JSON.stringify([...readIds])
+      );
+    } catch {
+      // UI state remains updated even when storage is unavailable.
+    }
   };
 
+
+  /* ================================================================
+     MARK ALL READ
+  ================================================================ */
+
   const markAllRead = () => {
-    setItems((previous) =>
-      previous.map((item) => ({
+    setItems((previous) => {
+      const ids = previous.map((item) => String(item.id));
+
+      try {
+        const stored = JSON.parse(
+          localStorage.getItem("metalan_read_notifications") || "[]"
+        );
+        const readIds = new Set(
+          Array.isArray(stored) ? stored.map(String) : []
+        );
+        ids.forEach((id) => readIds.add(id));
+        localStorage.setItem(
+          "metalan_read_notifications",
+          JSON.stringify([...readIds])
+        );
+      } catch {
+        // UI state remains updated even when storage is unavailable.
+      }
+
+      return previous.map((item) => ({
         ...item,
         unread: false,
-      }))
-    );
+      }));
+    });
   };
+
+
+  /* ================================================================
+     RENDER
+  ================================================================ */
 
   return (
     <>
@@ -295,8 +780,13 @@ export default function NotificationPanel({
         }
       `}</style>
 
+
       <div className="fixed inset-0 z-[125] overflow-hidden">
-        {/* Backdrop */}
+
+        {/* =========================================================
+            BACKDROP
+        ========================================================== */}
+
         <button
           type="button"
           aria-label="Close notifications"
@@ -318,7 +808,11 @@ export default function NotificationPanel({
           `}
         />
 
-        {/* Panel */}
+
+        {/* =========================================================
+            PANEL
+        ========================================================== */}
+
         <section
           ref={panelRef}
           role="dialog"
@@ -326,14 +820,19 @@ export default function NotificationPanel({
           aria-labelledby="notification-title"
           tabIndex={-1}
           style={{
-            backgroundColor: panelBg,
-            color: text,
-            borderColor: border,
+            backgroundColor:
+              panelBg,
+
+            color:
+              text,
+
+            borderColor:
+              border,
           }}
           className={`
             relative z-10 ml-auto
             flex h-[100dvh]
-            w-full max-w-[390px]
+            w-full max-w-[390px] sm:max-w-[410px]
             flex-col overflow-hidden
             border-l
             outline-none
@@ -347,7 +846,11 @@ export default function NotificationPanel({
             }
           `}
         >
-          {/* Decorative glow */}
+
+          {/* =======================================================
+              DECORATIVE GLOW
+          ======================================================== */}
+
           <div
             className="
               pointer-events-none absolute
@@ -358,27 +861,40 @@ export default function NotificationPanel({
             "
           />
 
-          {/* Header */}
+
+          {/* =======================================================
+              HEADER
+          ======================================================== */}
+
           <header
             style={{
-              backgroundColor: headerBg,
-              borderColor: border,
+              backgroundColor:
+                headerBg,
+
+              borderColor:
+                border,
             }}
             className="
               relative z-20 shrink-0
-              border-b px-5 pb-5 pt-5
+              border-b px-4 pb-4 pt-4 sm:px-5 sm:pb-5 sm:pt-5
             "
           >
+
             <div className="flex items-start justify-between gap-4">
+
               <div className="flex items-center gap-3">
+
                 <div
                   style={{
-                    backgroundColor: isDark
-                      ? "rgba(212,175,106,.075)"
-                      : "rgba(168,121,45,.065)",
-                    borderColor: isDark
-                      ? "rgba(212,175,106,.22)"
-                      : "rgba(168,121,45,.18)",
+                    backgroundColor:
+                      isDark
+                        ? "rgba(212,175,106,.075)"
+                        : "rgba(168,121,45,.065)",
+
+                    borderColor:
+                      isDark
+                        ? "rgba(212,175,106,.22)"
+                        : "rgba(168,121,45,.18)",
                   }}
                   className="
                     relative grid h-10 w-10
@@ -386,10 +902,14 @@ export default function NotificationPanel({
                     rounded-[14px] border
                   "
                 >
+
                   <Bell
                     size={17}
-                    style={{ color: accent }}
+                    style={{
+                      color: accent,
+                    }}
                   />
+
 
                   {unreadCount > 0 && (
                     <span
@@ -408,12 +928,18 @@ export default function NotificationPanel({
                       {unreadCount}
                     </span>
                   )}
+
                 </div>
 
+
                 <div>
+
                   <div className="flex items-center gap-2">
+
                     <p
-                      style={{ color: accent }}
+                      style={{
+                        color: accent,
+                      }}
                       className="
                         text-[9px] font-bold uppercase
                         tracking-[0.24em]
@@ -422,15 +948,15 @@ export default function NotificationPanel({
                       Account center
                     </p>
 
-                    <Sparkles
-                      size={11}
-                      style={{ color: accent }}
-                    />
+
                   </div>
+
 
                   <h2
                     id="notification-title"
-                    style={{ color: text }}
+                    style={{
+                      color: text,
+                    }}
                     className="
                       mt-1 font-serif
                       text-[21px] font-semibold
@@ -440,22 +966,31 @@ export default function NotificationPanel({
                     Notifications
                   </h2>
 
+
                   <p
-                    style={{ color: muted }}
+                    style={{
+                      color: muted,
+                    }}
                     className="mt-1 text-[11px]"
                   >
-                    Important updates from your account.
+                    Latest activity from your account.
                   </p>
+
                 </div>
+
               </div>
+
 
               <button
                 type="button"
                 onClick={closePanel}
                 aria-label="Close notifications"
                 style={{
-                  borderColor: border,
-                  color: muted,
+                  borderColor:
+                    border,
+
+                  color:
+                    muted,
                 }}
                 className={`
                   grid h-9 w-9 shrink-0
@@ -470,15 +1005,23 @@ export default function NotificationPanel({
               >
                 <X size={16} />
               </button>
+
             </div>
 
-            {/* Summary strip */}
+
+            {/* =====================================================
+                SUMMARY STRIP
+            ====================================================== */}
+
             <div
               style={{
-                backgroundColor: isDark
-                  ? "rgba(255,255,255,.018)"
-                  : "#F8FAF9",
-                borderColor: border,
+                backgroundColor:
+                  isDark
+                    ? "rgba(255,255,255,.018)"
+                    : "#F8FAF9",
+
+                borderColor:
+                  border,
               }}
               className="
                 mt-4 flex items-center
@@ -486,7 +1029,9 @@ export default function NotificationPanel({
                 border px-4 py-3
               "
             >
+
               <div className="flex items-center gap-2.5">
+
                 <span
                   className="
                     h-2 w-2 rounded-full
@@ -496,38 +1041,52 @@ export default function NotificationPanel({
                 />
 
                 <span
-                  style={{ color: subText }}
+                  style={{
+                    color: subText,
+                  }}
                   className="
                     text-[10px] font-medium
                   "
                 >
-                  {unreadCount > 0
-                    ? `${unreadCount} unread`
-                    : "All caught up"}
+                  {loading
+                    ? "Loading activity"
+                    : unreadCount > 0
+                      ? `${unreadCount} unread`
+                      : "All caught up"}
                 </span>
+
               </div>
+
 
               {unreadCount > 0 && (
                 <button
                   type="button"
                   onClick={markAllRead}
-                  style={{ color: accent }}
+                  style={{
+                    color: accent,
+                  }}
                   className="
                     inline-flex items-center gap-1.5
-                    rounded-lg px-2 py-1
-                    text-[9px] font-semibold
+                    rounded-lg px-1.5 py-0.5
+                    text-[8px] font-medium
                     transition
                     hover:bg-[#D4AF6A]/[0.08]
                   "
                 >
-                  <CheckCheck size={12} />
+                  <CheckCheck size={7} />
                   Mark all read
                 </button>
               )}
+
             </div>
+
           </header>
 
-          {/* Scroll area */}
+
+          {/* =========================================================
+              SCROLL AREA
+          ========================================================== */}
+
           <div
             data-lenis-prevent
             className="
@@ -535,22 +1094,33 @@ export default function NotificationPanel({
               min-h-0 flex-1
               overflow-y-auto
               overflow-x-hidden
-              px-4 py-5
+              px-3.5 py-4 sm:px-4 sm:py-5
             "
           >
-            {items.length === 0 ? (
-              <div className="
-                flex min-h-[420px]
-                flex-col items-center
-                justify-center
-                text-center
-              ">
+
+            {/* =======================================================
+                LOADING
+            ======================================================== */}
+
+            {loading ? (
+
+              <div
+                className="
+                  flex min-h-[420px]
+                  flex-col items-center
+                  justify-center text-center
+                "
+              >
+
                 <div
                   style={{
-                    backgroundColor: isDark
-                      ? "rgba(212,175,106,.07)"
-                      : "rgba(168,121,45,.055)",
-                    borderColor: border,
+                    backgroundColor:
+                      isDark
+                        ? "rgba(212,175,106,.07)"
+                        : "rgba(168,121,45,.055)",
+
+                    borderColor:
+                      border,
                   }}
                   className="
                     grid h-[72px] w-[72px]
@@ -560,12 +1130,86 @@ export default function NotificationPanel({
                 >
                   <Bell
                     size={25}
-                    style={{ color: accent }}
+                    style={{
+                      color: accent,
+                    }}
                   />
                 </div>
 
+
                 <p
-                  style={{ color: text }}
+                  style={{
+                    color: text,
+                  }}
+                  className="
+                    mt-5 text-[15px]
+                    font-semibold
+                  "
+                >
+                  Loading activity
+                </p>
+
+
+                <p
+                  style={{
+                    color: muted,
+                  }}
+                  className="
+                    mt-1.5 max-w-[265px]
+                    text-[11px]
+                    leading-relaxed
+                  "
+                >
+                  Fetching your latest transactions.
+                </p>
+
+              </div>
+
+
+            ) : items.length === 0 ? (
+
+              /* =====================================================
+                 EMPTY
+              ====================================================== */
+
+              <div
+                className="
+                  flex min-h-[420px]
+                  flex-col items-center
+                  justify-center
+                  text-center
+                "
+              >
+
+                <div
+                  style={{
+                    backgroundColor:
+                      isDark
+                        ? "rgba(212,175,106,.07)"
+                        : "rgba(168,121,45,.055)",
+
+                    borderColor:
+                      border,
+                  }}
+                  className="
+                    grid h-[72px] w-[72px]
+                    place-items-center
+                    rounded-[22px] border
+                  "
+                >
+                  <Bell
+                    size={25}
+                    style={{
+                      color: accent,
+                    }}
+                  />
+                </div>
+
+
+                <p
+                  style={{
+                    color: text,
+                  }}
                   className="
                     mt-5 text-[15px]
                     font-semibold
@@ -574,80 +1218,115 @@ export default function NotificationPanel({
                   You're all caught up
                 </p>
 
+
                 <p
-                  style={{ color: muted }}
+                  style={{
+                    color: muted,
+                  }}
                   className="
                     mt-1.5 max-w-[265px]
                     text-[11px]
                     leading-relaxed
                   "
                 >
-                  New account, wallet and
-                  investment activity will appear here.
+                  New wallet, fund and investment
+                  activity will appear here.
                 </p>
+
               </div>
+
+
             ) : (
+
+              /* =====================================================
+                 TRANSACTION NOTIFICATIONS
+              ====================================================== */
+
               <div className="space-y-3">
+
                 {items.map((item) => {
+
                   const Icon =
                     item.icon || Bell;
 
                   const palette =
-                    TYPE_STYLES[item.type] ||
+                    TYPE_STYLES[
+                      item.type
+                    ] ||
                     TYPE_STYLES.system;
 
-                  const iconStyle = isDark
-                    ? palette.dark
-                    : palette.light;
+                  const iconStyle =
+                    isDark
+                      ? palette.dark
+                      : palette.light;
+
 
                   return (
                     <article
                       key={item.id}
                       style={{
-                        backgroundColor: cardBg,
-                        borderColor: item.unread
-                          ? isDark
-                            ? "rgba(212,175,106,.18)"
-                            : "rgba(168,121,45,.16)"
-                          : border,
-                        boxShadow: isDark
-                          ? "0 10px 26px rgba(0,0,0,.08)"
-                          : "0 8px 22px rgba(20,35,29,.03)",
+                        backgroundColor:
+                          cardBg,
+
+                        borderColor:
+                          item.unread
+                            ? isDark
+                              ? "rgba(212,175,106,.18)"
+                              : "rgba(168,121,45,.16)"
+                            : border,
+
+                        boxShadow:
+                          isDark
+                            ? "0 10px 26px rgba(0,0,0,.08)"
+                            : "0 8px 22px rgba(20,35,29,.03)",
                       }}
                       className="
                         group relative
                         overflow-hidden
-                        rounded-[18px]
+                        rounded-[16px]
                         border
                         transition-all duration-200
                         hover:-translate-y-[1px]
                       "
                     >
-                      <div className="flex gap-3 p-3.5">
-                        {/* Icon */}
+
+                      <div className="flex gap-2.5 p-3">
+
+                        {/* =================================================
+                            ICON
+                        ================================================== */}
+
                         <div
                           style={{
-                            backgroundColor: iconStyle.bg,
-                            borderColor: iconStyle.border,
+                            backgroundColor:
+                              iconStyle.bg,
+
+                            borderColor:
+                              iconStyle.border,
                           }}
                           className="
                             relative mt-0.5
-                            grid h-10 w-10
+                            grid h-9 w-9
                             shrink-0 place-items-center
-                            rounded-[13px] border
+                            rounded-[12px] border
                           "
                         >
+
                           <Icon
-                            size={17}
+                            size={16}
                             style={{
-                              color: iconStyle.icon,
+                              color:
+                                iconStyle.icon,
                             }}
                           />
+
 
                           {item.unread && (
                             <span
                               style={{
-                                backgroundColor: accent,
+                                backgroundColor:
+                                  accent,
+
                                 boxShadow:
                                   "0 0 9px rgba(212,175,106,.35)",
                               }}
@@ -657,14 +1336,24 @@ export default function NotificationPanel({
                               "
                             />
                           )}
+
                         </div>
 
-                        {/* Content */}
+
+                        {/* =================================================
+                            CONTENT
+                        ================================================== */}
+
                         <div className="min-w-0 flex-1">
+
                           <div className="flex items-start justify-between gap-2">
+
                             <div className="min-w-0">
+
                               <h3
-                                style={{ color: text }}
+                                style={{
+                                  color: text,
+                                }}
                                 className="
                                   truncate
                                   text-[12px]
@@ -675,35 +1364,46 @@ export default function NotificationPanel({
                                 {item.title}
                               </h3>
 
+
                               <span
-                                style={{ color: muted }}
+                                style={{
+                                  color: muted,
+                                }}
                                 className="
                                   mt-0.5 block
-                                  text-[8px]
+                                  text-[7px]
                                   font-medium
                                   uppercase
                                   tracking-[0.12em]
                                 "
                               >
-                                {item.type === "investment"
+                                {item.type ===
+                                "investment"
                                   ? "Investment"
-                                  : item.type === "wallet"
+                                  : item.type ===
+                                      "wallet"
                                     ? "Wallet"
-                                    : item.type === "fund"
+                                    : item.type ===
+                                        "fund"
                                       ? "Fund"
-                                      : item.type === "security"
+                                      : item.type ===
+                                          "security"
                                         ? "Security"
-                                        : "System"}
+                                        : "Transaction"}
                               </span>
+
                             </div>
+
 
                             {item.unread && (
                               <span
                                 style={{
                                   color: accent,
-                                  borderColor: isDark
-                                    ? "rgba(212,175,106,.20)"
-                                    : "rgba(168,121,45,.18)",
+
+                                  borderColor:
+                                    isDark
+                                      ? "rgba(212,175,106,.20)"
+                                      : "rgba(168,121,45,.18)",
                                 }}
                                 className="
                                   shrink-0 rounded-full
@@ -714,7 +1414,9 @@ export default function NotificationPanel({
                                 NEW
                               </span>
                             )}
+
                           </div>
+
 
                           <p
                             style={{
@@ -731,63 +1433,72 @@ export default function NotificationPanel({
                             {item.message}
                           </p>
 
-                          <div className="
-                            mt-2.5 flex
-                            items-center justify-between
-                            gap-2
-                          ">
+
+                          {/* =================================================
+                              FOOTER
+                          ================================================== */}
+
+                          <div
+                            className="
+                              mt-2.5 flex
+                              items-center justify-between
+                              gap-2
+                            "
+                          >
+
                             <span
-                              style={{ color: muted }}
+                              style={{
+                                color: muted,
+                              }}
                               className="
                                 inline-flex
                                 items-center gap-1.5
                                 text-[8px]
                               "
                             >
-                              <Clock3 size={10} />
+                              <Clock3 size={9} />
+
                               {item.time}
                             </span>
+
 
                             {item.unread ? (
                               <button
                                 type="button"
-                                onClick={() =>
-                                  markOneRead(item.id)
-                                }
-                                style={{
-                                  color: accent,
-                                }}
+                                onClick={() => markOneRead(item.id)}
+                                style={{ color: accent }}
                                 className="
-                                  inline-flex
-                                  items-center gap-1
-                                  rounded-lg
-                                  px-1.5 py-1
-                                  text-[8px]
-                                  font-semibold
-                                  opacity-0
-                                  transition-all
-                                  duration-200
-                                  group-hover:opacity-100
+                                  inline-flex items-center gap-1
+                                  rounded-md px-1.5 py-0.5
+                                  text-[7px] font-medium
+                                  opacity-100 transition-colors
                                   hover:bg-[#D4AF6A]/[0.08]
                                 "
                               >
-                                <Check size={10} />
-                                Read
+                                <Check size={6} />
+                                Mark read
                               </button>
                             ) : (
-                              <span className="
-                                inline-flex
-                                items-center gap-1
-                                text-[8px]
-                                font-medium
-                                text-emerald-500
-                              ">
-                                <Check size={10} />
+                              <span
+                                style={{ color: muted }}
+                                className="
+                                  inline-flex items-center gap-1
+                                  text-[8px] font-medium
+                                "
+                              >
+                                <Check size={9} />
                                 Read
                               </span>
                             )}
+
                           </div>
+
                         </div>
+
+
+                        {/* =================================================
+                            CHEVRON
+                        ================================================== */}
 
                         <ChevronRight
                           size={13}
@@ -805,21 +1516,34 @@ export default function NotificationPanel({
                             group-hover:opacity-100
                           "
                         />
+
                       </div>
+
                     </article>
                   );
                 })}
 
+
                 <div className="h-3" />
+
               </div>
+
             )}
+
           </div>
 
-          {/* Footer */}
+
+          {/* =========================================================
+              FOOTER
+          ========================================================== */}
+
           <footer
             style={{
-              backgroundColor: headerBg,
-              borderColor: border,
+              backgroundColor:
+                headerBg,
+
+              borderColor:
+                border,
             }}
             className="
               relative z-10
@@ -827,12 +1551,16 @@ export default function NotificationPanel({
               px-4 py-4
             "
           >
+
             <button
               type="button"
               onClick={closePanel}
               style={{
-                borderColor: border,
-                color: subText,
+                borderColor:
+                  border,
+
+                color:
+                  subText,
               }}
               className={`
                 flex w-full
@@ -850,8 +1578,11 @@ export default function NotificationPanel({
             >
               Close
             </button>
+
           </footer>
+
         </section>
+
       </div>
     </>
   );
