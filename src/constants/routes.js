@@ -35,4 +35,12 @@ export const ROUTES = {
   DASHBOARD_WALLET: "/dashboard/wallet",
   DASHBOARD_TRANSACTIONS: "/dashboard/transactions",
   DASHBOARD_PROFILE: "/dashboard/profile",
+  DASHBOARD_REFERRALS: "/dashboard/referrals",
+  DASHBOARD_SETTINGS: "/dashboard/settings",
+
+  // ============================================================
+  // INVESTOR AREA (/user-admin)
+  // ============================================================
+
+  USER_ADMIN: "/user-admin",
 };

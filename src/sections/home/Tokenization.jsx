@@ -31,149 +31,150 @@ export default function Tokenization() {
   ];
 
   useLayoutEffect(() => {
-    const ctx = gsap.context(() => {
-      const tl = gsap.timeline({
-        scrollTrigger: {
-          trigger: sectionRef.current,
-          start: "top 75%",
-          toggleActions: "play none none none",
-        },
-        defaults: {
-          ease: "power3.out",
-        },
-      });
+  const ctx = gsap.context(() => {
+    const tl = gsap.timeline({
+      scrollTrigger: {
+        trigger: sectionRef.current,
+        start: "top 75%",
+        toggleActions: "play none play reverse",
+      },
+      defaults: {
+        ease: "power3.out",
+      },
+    });
 
-      tl.from(".tokenization-heading", {
-        y: 40,
-        opacity: 0,
-        duration: 0.9,
-      })
-        .from(
-          ".tokenization-description",
-          {
-            y: 25,
-            opacity: 0,
-            duration: 0.7,
-          },
-          "-=0.5"
-        )
-        .from(
-          ".tokenization-main",
-          {
-            y: 30,
-            opacity: 0,
-            duration: 0.8,
-          },
-          "-=0.4"
-        )
-        .from(
-          ".tokenization-step",
-          {
-            y: 20,
-            opacity: 0,
-            duration: 0.6,
-            stagger: 0.1,
-          },
-          "-=0.5"
-        )
-        .from(
-          ".tokenization-card",
-          {
-            y: 25,
-            opacity: 0,
-            duration: 0.8,
-          },
-          "-=0.6"
-        )
-        .from(
-          ".tokenization-benefit",
-          {
-            y: 20,
-            opacity: 0,
-            duration: 0.6,
-            stagger: 0.1,
-          },
-          "-=0.5"
-        );
-    }, sectionRef);
+    tl.from(".tokenization-heading", {
+      y: 35,
+      opacity: 0,
+      duration: 0.8,
+    })
+      .from(
+        ".tokenization-description",
+        {
+          y: 20,
+          opacity: 0,
+          duration: 0.7,
+        },
+        "-=0.45"
+      )
+      .from(
+        ".tokenization-visual",
+        {
+          x: -30,
+          opacity: 0,
+          duration: 0.8,
+        },
+        "-=0.35"
+      )
+      .from(
+        ".tokenization-step",
+        {
+          x: 25,
+          opacity: 0,
+          duration: 0.6,
+          stagger: 0.1,
+        },
+        "-=0.5"
+      )
+      .from(
+        ".tokenization-card",
+        {
+          x: 30,
+          opacity: 0,
+          duration: 0.8,
+        },
+        "-=0.5"
+      )
+      .from(
+        ".tokenization-benefit",
+        {
+          y: 20,
+          opacity: 0,
+          duration: 0.6,
+          stagger: 0.1,
+        },
+        "-=0.4"
+      );
+  }, sectionRef);
 
-    return () => ctx.revert();
-  }, []);
+  return () => ctx.revert();
+}, []);
 
   return (
     <section
+      id="blockchain"
       ref={sectionRef}
       className="relative overflow-hidden bg-[#0A0A0A] text-white"
     >
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{
-          backgroundImage: "url('/images/tokenization-bg-export.png')",
+         backgroundImage: "url('/images/Tokenization-Images/tokenization-bg-export.png')",
         }}
       />
 
       <div className="absolute inset-0 bg-[#0A0A0A]/90" />
 
-      <div className="relative z-10 mx-auto max-w-[1480px] px-6 py-16 sm:px-10 lg:px-20 lg:py-20">
-        <div className="max-w-[1320px]">
-          <h2 className="tokenization-heading font-['Instrument_Serif'] text-[48px] font-normal leading-none tracking-normal text-[#FFFFFF]">
+     <div className="relative z-10 mx-auto w-full max-w-[1480px] px-4 py-8 sm:px-5 sm:py-10 md:px-6 md:py-12 lg:px-10 lg:py-14 xl:px-20">
+        <div className="w-full max-w-[1320px]">
+          <h2 className="tokenization-heading font-['Instrument_Serif'] text-[34px] font-normal leading-[1.05] tracking-normal text-[#FFFFFF] sm:text-[40px] lg:text-[48px]">
             Own Premium Real Estate — One Token at a Time
           </h2>
 
-          <p className="tokenization-description mt-5 max-w-[850px] text-[15px] leading-[1.45] text-[#8F9A96]">
+          <p className="tokenization-description mt-5 max-w-[850px] text-[14px] leading-[1.5] text-[#8F9A96] sm:text-[15px] lg:text-[15px]">
             Metalan Wealth lowers the barrier to prime global property assets
             through regulatory-compliant SPV
             <br />
             fractional tokenization. Secure physical yield on-chain.
           </p>
 
-          <div className="tokenization-main mt-10 grid grid-cols-1 items-start gap-8 lg:grid-cols-[370px_minmax(0,1fr)_440px] lg:gap-10">
-            <div className="h-[480px] w-full overflow-hidden rounded-[24px] bg-[#121614]">
+          <div className="tokenization-main mt-8 grid grid-cols-1 items-start gap-6 sm:mt-10 md:grid-cols-2 md:gap-6 lg:grid-cols-[minmax(280px,1fr)_minmax(260px,1.1fr)_minmax(300px,1fr)] lg:gap-6 xl:mt-10 xl:grid-cols-[minmax(300px,370px)_minmax(280px,400px)_minmax(320px,400px)] xl:gap-8">
+            <div className="tokenization-visual h-[220px] w-full overflow-hidden rounded-[22px] bg-[#121614] sm:h-[290px] md:h-[320px] lg:h-[400px]">
               <img
-                src="/images/isometric-visual.png"
+                src="/images/Tokenization-Images/isometric-visual.png"
                 alt="Premium real estate"
                 className="h-full w-full object-cover"
               />
             </div>
 
-            <div className="flex flex-col gap-6">
-              {steps.map((step) => (
+                    <div className="flex h-auto w-full flex-col gap-4 sm:gap-5 lg:max-w-[420px] xl:min-h-0">
+            {steps.map((step) => (
                 <div
-                  key={step.number}
-                  className="tokenization-step flex items-start gap-4"
+                key={step.number}
+                className="tokenization-step flex min-h-[44px] items-start gap-4"
                 >
-                  <div className="flex h-[36px] w-[36px] shrink-0 items-center justify-center rounded-full border border-[#D4A853] bg-[#1A3C34] text-[14px] font-medium text-[#D4A853]">
+                <div className="flex h-[36px] w-[36px] shrink-0 items-center justify-center rounded-full border border-[#D4A853] bg-[#1A3C34] text-[14px] font-medium text-[#D4A853]">
                     {step.number}
-                  </div>
+                </div>
 
-                  <div className="pt-0.5">
-                    <h3 className="font-['Instrument_Serif'] text-[20px] font-normal leading-[1.2] text-[#FFFFFF]">
-                      {step.title}
+                <div className="pt-0.5">
+                <h3 className="font-['Instrument_Serif'] text-[18px] font-normal leading-[1.2] text-[#FFFFFF]">
+                    {step.title}
                     </h3>
 
-                    <p className="mt-1 text-[13px] leading-[1.45] text-[#8F9A96]">
-                      {step.text}
+                    <p className="mt-1 text-[13px] leading-[1.2] text-[#8F9A96]">
+                    {step.text}
                     </p>
-                  </div>
                 </div>
-              ))}
+                </div>
+            ))}
             </div>
 
-            <div className="tokenization-card h-[430px] w-[440px] max-w-full rounded-[24px] border border-[#D4A853] bg-[#121614]/[0.8784] p-[24px] shadow-[0_4px_24px_0_#D4A853]">
-              <div className="h-[150px] w-full overflow-hidden rounded-[12px] bg-[#121614]">
+         <div className="tokenization-card col-span-1 h-auto min-h-[350px] w-full max-w-full rounded-[22px] border border-[#D4A853] bg-[#121614]/[0.8784] p-4 shadow-[0_4px_24px_0_#D4A853] sm:p-4 md:col-span-2 lg:col-span-1 xl:min-h-[400px] xl:w-[370px]">
+             <div className="h-[110px] sm:h-[125px] lg:h-[140px] w-full overflow-hidden rounded-[12px] bg-[#121614]">
                 <img
-                  src="/images/card-img.png"
+                  src="/images/Tokenization-Images/card-img.png"
                   alt="Marina Bay Tower, Dubai"
                   className="h-full w-full object-cover"
                 />
               </div>
 
-              <div className="mt-[20px]">
-                <h3 className="font-['Instrument_Serif'] text-[22px] font-normal leading-[1.1] text-[#FFFFFF]">
+              <div className="mt-[12px] sm:mt-[16px]">
+                <h3 className="font-['Instrument_Serif'] text-[20px] font-normal leading-[1.1] text-[#FFFFFF] sm:text-[22px]">
                   Marina Bay Tower, Dubai
                 </h3>
 
-                <div className="mt-[8px] flex items-center justify-between">
+               <div className="mt-[16px] flex items-center justify-between">
                   <span className="text-[11px] font-normal text-[#8F9A96]">
                     Total Value: $2.4M
                   </span>
@@ -221,7 +222,7 @@ export default function Tokenization() {
 
                 <button
                   type="button"
-                  className="mt-[16px] flex h-[46px] w-full items-center justify-center rounded-[12px] bg-[#D4A853] text-[14px] !font-[700] text-[#0A0A0A]"
+                  className="mt-[14px] flex h-[42px] w-full items-center justify-center rounded-[12px] bg-[#D4A853] text-[14px] !font-[700] text-[#0A0A0A]"
                 >
                   Invest Now
                 </button>
@@ -229,7 +230,7 @@ export default function Tokenization() {
             </div>
           </div>
 
-          <div className="mt-12 grid grid-cols-1 gap-5 md:grid-cols-3">
+         <div className="mt-6 grid grid-cols-1 gap-4 sm:mt-16 sm:grid-cols-2 sm:gap-5 md:grid-cols-3">
             <div className="tokenization-benefit rounded-[16px] border border-white/[0.08] bg-[#111513] px-5 py-5">
               <h3 className="font-['Instrument_Serif'] text-[20px] font-normal text-[#D4A853]">
                 Fractional Access

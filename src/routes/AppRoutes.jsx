@@ -1,9 +1,15 @@
 /* routes/AppRoutes.jsx: application source file. See README.md for the folder responsibility. */
-import { Route, Routes } from "react-router-dom";
+
+import {
+  Route,
+  Routes,
+  useLocation,
+  Outlet,
+} from "react-router-dom";
+import { useEffect } from "react";
 
 // Layouts
 import PublicLayout from "../layouts/PublicLayout";
-import DashboardLayout from "../layouts/DashboardLayout";
 
 // Route Guards
 import PublicRoute from "./PublicRoute";
@@ -21,151 +27,222 @@ import Exchange from "../pages/public/Exchange";
 import HowItWorks from "../pages/public/HowItWorks";
 import Contact from "../pages/public/Contact";
 
-// Authentication Pages
+// Authentication
 import Login from "../pages/auth/Login";
 
-
-// Dashboard Pages
-import Dashboard from "../pages/dashboard/Dashboard";
-import DashboardProperties from "../pages/dashboard/Properties";
-import DashboardFunds from "../pages/dashboard/Funds";
+// Dashboard
+import UserAdmin from "../pages/dashboard/UserAdmin";
+import DashboardProperties from "../pages/dashboard/PropertyInvestments";
+import DashboardFunds from "../pages/dashboard/FundInvestments";
 import DashboardExchange from "../pages/dashboard/Exchange";
 import DashboardWallet from "../pages/dashboard/Wallet";
-import Transactions from "../pages/dashboard/Transactions";
-import Profile from "../pages/dashboard/Profile";
-import Referrals from "../pages/dashboard/Referrals";
-import Settings from "../pages/dashboard/Settings";
+import Profile from "../pages/dashboard/UserProfilePanel";
+import UserAdminRoutes from "../pages/dashboard/UserAdminRoutes";
 
-// Error Pages
+// Theme
+import { ThemeProvider } from "../pages/dashboard/shared/ThemeContext";
+
+// Error
 import NotFound from "../pages/errors/NotFound";
 
-/**
- * Application route configuration.
- *
- * Route groups:
- * 1. Public Routes
- *    Accessible to all visitors.
- *
- * 2. Authentication Routes
- *    Accessible only to unauthenticated users.
- *
- * 3. Protected Dashboard Routes
- *    Accessible only to authenticated users.
- *
- * 4. Fallback Route
- *    Handles all undefined URLs.
- */
+/* ============================================================
+   SCROLL TO TOP
+============================================================ */
+
+function ScrollToTop() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+
+  return null;
+}
+
+/* ============================================================
+   PROTECTED THEME LAYOUT
+
+   ThemeProvider yahan rakha hai so that:
+   /dashboard
+   /user-admin/*
+   /investments
+   /properties
+   /wallet
+   /transactions
+   /exchange
+
+   sab same theme context use karein.
+============================================================ */
+
+function ProtectedThemeLayout() {
+  return (
+    <ThemeProvider>
+      <Outlet />
+    </ThemeProvider>
+  );
+}
+
+/* ============================================================
+   APP ROUTES
+============================================================ */
+
 export default function AppRoutes() {
   return (
-    <Routes>
-      {/* ============================================================
-          PUBLIC WEBSITE ROUTES
-          These pages are accessible without authentication.
-      ============================================================ */}
-      <Route element={<PublicLayout />}>
-        <Route path={ROUTES.HOME} element={<Home />} />
+    <>
+      <ScrollToTop />
 
-        <Route path={ROUTES.ABOUT} element={<About />} />
+      <Routes>
 
-        <Route path={ROUTES.PROPERTIES} element={<Properties />} />
+        {/* ======================================================
+            PUBLIC WEBSITE
+        ======================================================= */}
 
-        <Route path={ROUTES.FUNDS} element={<Funds />} />
-
-        <Route path={ROUTES.EXCHANGE} element={<Exchange />} />
-
-        <Route
-          path={ROUTES.HOW_IT_WORKS}
-          element={<HowItWorks />}
-        />
-
-        <Route path={ROUTES.CONTACT} element={<Contact />} />
-      </Route>
-
-      {/* ============================================================
-          AUTHENTICATION ROUTES
-          PublicRoute prevents authenticated users from
-          accessing login and registration pages.
-      ============================================================ */}
-      <Route element={<PublicRoute />}>
-        <Route path={ROUTES.LOGIN} element={<Login />} />
-
-      </Route>
-
-      {/* ============================================================
-          PROTECTED DASHBOARD ROUTES
-          ProtectedRoute ensures that only authenticated users
-          can access the dashboard.
-      ============================================================ */}
-      <Route element={<ProtectedRoute />}>
-        <Route element={<DashboardLayout />}>
-          {/* Dashboard Home */}
+        <Route element={<PublicLayout />}>
           <Route
-            path={ROUTES.DASHBOARD}
-            element={<Dashboard />}
+            path={ROUTES.HOME}
+            element={<Home />}
           />
 
-          {/* Property Investments */}
           <Route
-            path={ROUTES.DASHBOARD_PROPERTIES}
-            element={<DashboardProperties />}
+            path={ROUTES.ABOUT}
+            element={<About />}
           />
 
-          {/* Investment Funds */}
           <Route
-            path={ROUTES.DASHBOARD_FUNDS}
-            element={<DashboardFunds />}
+            path={ROUTES.PROPERTIES}
+            element={<Properties />}
           />
 
-          {/* Token Exchange */}
           <Route
-            path={ROUTES.DASHBOARD_EXCHANGE}
-            element={<DashboardExchange />}
+            path={ROUTES.FUNDS}
+            element={<Funds />}
           />
 
-          {/* Wallet */}
           <Route
-            path={ROUTES.DASHBOARD_WALLET}
-            element={<DashboardWallet />}
+            path={ROUTES.EXCHANGE}
+            element={<Exchange />}
           />
 
-          {/* Transactions */}
           <Route
-            path={ROUTES.DASHBOARD_TRANSACTIONS}
-            element={<Transactions />}
+            path={ROUTES.HOW_IT_WORKS}
+            element={<HowItWorks />}
           />
 
-          {/* User Profile / KYC */}
           <Route
-            path={ROUTES.DASHBOARD_PROFILE}
-            element={<Profile />}
-          />
-
-
-
-
-
-          {/* Referral Program */}
-          <Route
-            path={ROUTES.DASHBOARD_REFERRALS}
-            element={<Referrals />}
-          />
-
-          {/* Account Settings */}
-          <Route
-            path={ROUTES.DASHBOARD_SETTINGS}
-            element={<Settings />}
+            path={ROUTES.CONTACT}
+            element={<Contact />}
           />
         </Route>
-      </Route>
 
-      {/* ============================================================
-          404 FALLBACK
-          Matches every URL that does not exist.
-      ============================================================ */}
-      <Route
-        path="*"
-        element={<NotFound />}
-      />
-    </Routes>
+
+        {/* ======================================================
+            AUTHENTICATION
+        ======================================================= */}
+
+        <Route element={<PublicRoute />}>
+          <Route
+            path={ROUTES.LOGIN}
+            element={<Login />}
+          />
+        </Route>
+
+
+        {/* ======================================================
+            PROTECTED INVESTOR AREA
+
+            ProtectedRoute
+                  ↓
+            ThemeProvider
+                  ↓
+            all dashboard pages
+        ======================================================= */}
+
+        <Route element={<ProtectedRoute />}>
+          <Route element={<ProtectedThemeLayout />}>
+
+            {/* -----------------------------------------------
+                USER ADMIN NESTED AREA
+            ------------------------------------------------ */}
+
+            <Route
+              path="/user-admin/*"
+              element={<UserAdminRoutes />}
+            />
+
+
+            {/* -----------------------------------------------
+                DASHBOARD HOME
+            ------------------------------------------------ */}
+
+            <Route
+              path={ROUTES.DASHBOARD}
+              element={<UserAdmin />}
+            />
+
+
+            {/* -----------------------------------------------
+                PROPERTY INVESTMENTS
+            ------------------------------------------------ */}
+
+            <Route
+              path={ROUTES.DASHBOARD_PROPERTIES}
+              element={<DashboardProperties />}
+            />
+
+
+            {/* -----------------------------------------------
+                FUND INVESTMENTS
+            ------------------------------------------------ */}
+
+            <Route
+              path={ROUTES.DASHBOARD_FUNDS}
+              element={<DashboardFunds />}
+            />
+
+
+            {/* -----------------------------------------------
+                EXCHANGE
+            ------------------------------------------------ */}
+
+            <Route
+              path={ROUTES.DASHBOARD_EXCHANGE}
+              element={<DashboardExchange />}
+            />
+
+
+            {/* -----------------------------------------------
+                WALLET
+            ------------------------------------------------ */}
+
+            <Route
+              path={ROUTES.DASHBOARD_WALLET}
+              element={<DashboardWallet />}
+            />
+
+
+            {/* -----------------------------------------------
+                PROFILE
+            ------------------------------------------------ */}
+
+            <Route
+              path={ROUTES.DASHBOARD_PROFILE}
+              element={<Profile />}
+            />
+
+          </Route>
+        </Route>
+
+
+        {/* ======================================================
+            404
+        ======================================================= */}
+
+        <Route
+          path="*"
+          element={<NotFound />}
+        />
+
+      </Routes>
+    </>
   );
 }

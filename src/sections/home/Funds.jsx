@@ -8,7 +8,7 @@ const funds = [
   {
     title: "Metalan Real Estate Growth Fund",
     manager: "Sarah Chen, CFA",
-    avatar: "/images/mgr-avatar-1.png",
+    avatar: "/images/Funds-images/mgr-avatar-1.png",
     returnValue: "18.4% 1Y",
     aum: "$12.4M",
     risk: "Moderate",
@@ -18,7 +18,7 @@ const funds = [
   {
     title: "Global Forex Alpha Fund",
     manager: "James Robertson",
-    avatar: "/images/mgr-avatar-2.png",
+    avatar: "/images/Funds-images/mgr-avatar-2.png",
     returnValue: "24.1% 1Y",
     aum: "$8.7M",
     risk: "High",
@@ -28,7 +28,7 @@ const funds = [
   {
     title: "Stable Income Fund",
     manager: "Priya Sharma",
-    avatar: "/images/mgr-avatar-3.png",
+    avatar: "/images/Funds-images/mgr-avatar-3.png",
     returnValue: "9.2% 1Y",
     aum: "$22.1M",
     risk: "Low",
@@ -46,7 +46,7 @@ export default function Funds() {
         scrollTrigger: {
           trigger: sectionRef.current,
           start: "top 75%",
-          toggleActions: "play none none none",
+          toggleActions: "play none play reverse",
         },
         defaults: {
           ease: "power3.out",
@@ -93,56 +93,57 @@ export default function Funds() {
 
   return (
     <section
+      id="investments"
       ref={sectionRef}
-      className="relative min-h-[900px] overflow-hidden bg-[#0A0A0A] text-white"
+      className="relative min-h-[820px] overflow-hidden bg-[#0A0A0A] text-white"
     >
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{
-          backgroundImage: "url('/images/funds-bg-export.png')",
+          backgroundImage: "url('/images/Funds-images/funds-bg-export.png')",
         }}
       />
 
       <div className="absolute inset-0 bg-[#0A0A0A]/90" />
 
-      <div className="relative z-10 mx-auto w-full max-w-[1440px] px-6 py-[80px] lg:px-[80px]">
+      <div className="relative z-10 mx-auto w-full max-w-[1440px] px-4 py-10 sm:px-5 sm:py-12 md:px-6 md:py-14 lg:px-10 lg:py-16 xl:px-20">
         <div className="w-full">
-          <h2 className="funds-heading font-['Instrument_Serif'] text-[48px] font-normal leading-[1.05] tracking-normal text-[#FFFFFF]">
+          <h2 className="funds-heading font-['Instrument_Serif'] text-[30px] font-normal leading-[1.05] tracking-normal text-[#FFFFFF] sm:text-[36px] lg:text-[44px] xl:text-[48px]">
             Expert-Managed Funds — Forex, Real Estate & Beyond
           </h2>
 
-          <p className="funds-description mt-[14px] text-[16px] leading-[1.5] text-[#8F9A96]">
+          <p className="funds-description mt-[14px] max-w-[800px] text-[14px] leading-[1.5] text-[#8F9A96] sm:text-[15px] lg:text-[16px]">
             Secure passive growth via automated indices curated by our tier-1
             asset management desks.
           </p>
         </div>
 
-        <div className="mt-[40px] grid grid-cols-1 gap-[16px] lg:grid-cols-3">
+       <div className="mt-8 grid grid-cols-1 gap-4 sm:mt-10 lg:mt-[40px] lg:grid-cols-3">
           {funds.map((fund) => (
             <div
               key={fund.title}
-              className="fund-card h-[370px] w-full rounded-[20px] border border-[#D4A853]/25 bg-[#121614]/[0.8784] p-[24px]"
+              className="fund-card h-auto min-h-[340px] w-full rounded-[18px] border border-[#D4A853]/25 bg-[#121614]/[0.8784] p-4 sm:p-5 lg:h-[350px]"
             >
-              <h3 className="font-['Instrument_Serif'] text-[23px] font-normal leading-[1.15] text-[#FFFFFF]">
+              <h3 className="font-['Instrument_Serif'] text-[19px] font-normal leading-[1.15] text-[#FFFFFF] sm:text-[21px]">
                 {fund.title}
               </h3>
 
-              <div className="mt-[12px] flex items-center gap-[10px]">
+              <div className="mt-2 flex items-center gap-[10px]">
                 <img
                   src={fund.avatar}
                   alt={fund.manager}
-                  className="h-[30px] w-[30px] rounded-full object-cover"
+                  className="h-7 w-7 rounded-full object-cover"
                 />
 
-                <span className="text-[13px] font-normal text-[#8F9A96]">
+                <span className="text-[12px] font-normal text-[#8F9A96]">
                   {fund.manager}
                 </span>
               </div>
 
-              <div className="mt-[19px]">
+              <div className="mt-4">
                 <svg
                   viewBox="0 0 342 70"
-                  className="h-[70px] w-full"
+                  className="h-[58px] w-full"
                   preserveAspectRatio="none"
                 >
                   <polyline
@@ -159,7 +160,7 @@ export default function Funds() {
                 </p>
               </div>
 
-              <div className="mt-[16px] space-y-[8px]">
+              <div className="mt-3 space-y-1.5">
                 <div className="flex items-center justify-between">
                   <span className="text-[13px] font-normal text-[#8F9A96]">
                     1Y Return
@@ -193,7 +194,7 @@ export default function Funds() {
 
               <button
                 type="button"
-                className="mt-[14px] flex h-[41px] w-full items-center justify-center rounded-[8px] border border-[#D4A853] bg-[#0A0A0A]/55 px-0 py-[12px] text-[13px] font-medium text-[#D4A853]"
+              className="mt-3 flex h-[38px] w-full items-center justify-center rounded-[8px] border border-[#D4A853] bg-[#0A0A0A]/55 px-0 py-2 text-[12px] font-medium text-[#D4A853]"
               >
                 View Fund Details
               </button>
@@ -201,12 +202,12 @@ export default function Funds() {
           ))}
         </div>
 
-        <div className="fund-comparison mt-[39px] w-full rounded-[16px] border border-white/[0.08] bg-[#121614]/80 px-[16px] py-[17px]">
-          <h3 className="font-['Instrument_Serif'] text-[18px] font-normal text-[#D4A853]">
+        <div className="fund-comparison mt-6 w-full rounded-[16px] border border-white/[0.08] bg-[#121614]/80 px-4 py-3 sm:mt-7 sm:px-4 sm:py-4">
+          <h3 className="font-['Instrument_Serif'] text-[17px] font-normal text-[#D4A853]">
             Fund Comparison Index
           </h3>
 
-          <div className="mt-[13px] grid grid-cols-1 gap-3 text-[13px] font-normal text-[#8F9A96] md:grid-cols-3">
+          <div className="mt-[13px] grid grid-cols-1 gap-3 text-[12px] font-normal text-[#8F9A96] md:grid-cols-3">
             <span>RE Growth: 18.4% Est IRR</span>
 
             <span className="md:text-center">
