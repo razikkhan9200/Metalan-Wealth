@@ -1,0 +1,85 @@
+/**
+ * theme.css — light / dark palette for the /user-admin area.
+ *
+ * The pages are written with dark-mode Tailwind classes. Tailwind v4 utilities read the
+ * palette from CSS variables (text-white -> var(--color-white), bg-white/5 ->
+ * color-mix(var(--color-white) 5%)…), so in light mode we simply re-map those variables on
+ * the wrapper. Hard-coded hex surfaces (bg-[#0a1019] etc.) are handled by the rules below.
+ *
+ * Add class `mt-dark-zone` to anything that sits on a dark photo / overlay (hero, image chips):
+ * it restores the dark palette for that subtree in both themes.
+ */
+
+.mt-root { --mt-page:#05080d; --mt-surface:#0a1019; --mt-surface-2:#0d1520;
+  --mt-gold:#d4af6a; --mt-gold-text:#e2c17f; --mt-gold-soft:#f0d69a; color-scheme: dark; }
+
+/* ───────── light palette ───────── */
+.mt-root[data-mt-theme="light"] {
+  color-scheme: light;
+  --mt-page:#eef1f6; --mt-surface:#ffffff; --mt-surface-2:#f4f6fa;
+  --mt-gold:#b98a2e; --mt-gold-text:#8a6420; --mt-gold-soft:#7a5a1c;
+
+  --color-white:#0f172a;          /* text-white, bg-white/x, border-white/x  -> ink */
+  --color-black:#94a3b8;          /* bg-black/x (inputs, scrims)             -> soft slate */
+  --color-slate-100:#1e293b; --color-slate-200:#273449; --color-slate-300:#334155;
+  --color-slate-400:#475569; --color-slate-500:#64748b; --color-slate-600:#94a3b8; --color-slate-700:#cbd5e1;
+  --color-cyan-200:#0e7490;   --color-cyan-300:#0e7490;
+  --color-emerald-300:#047857; --color-rose-300:#be123c;
+  --color-amber-300:#b45309;  --color-indigo-300:#4f46e5;
+}
+
+/* dark zone: put the dark palette back (used inside light mode only; dark mode already is) */
+.mt-root[data-mt-theme="light"] .mt-dark-zone {
+  color-scheme: dark;
+  --mt-page:#05080d; --mt-surface:#0a1019; --mt-surface-2:#0d1520;
+  --mt-gold:#d4af6a; --mt-gold-text:#e2c17f; --mt-gold-soft:#f0d69a;
+  --color-white:#ffffff; --color-black:#000000;
+  --color-slate-100:#f1f5f9; --color-slate-200:#e2e8f0; --color-slate-300:#cbd5e1;
+  --color-slate-400:#94a3b8; --color-slate-500:#64748b; --color-slate-600:#475569; --color-slate-700:#334155;
+  --color-cyan-200:#a5f3fc;   --color-cyan-300:#67e8f9;
+  --color-emerald-300:#6ee7b7; --color-rose-300:#fda4af;
+  --color-amber-300:#fcd34d;  --color-indigo-300:#a5b4fc;
+}
+
+/* ───────── hard-coded colours -> tokens (light mode) ───────── */
+.mt-root[data-mt-theme="light"] [class*="bg-[#05080d]"]  { background-color: var(--mt-page); }
+.mt-root[data-mt-theme="light"] [class*="bg-[#0a1019]"],
+.mt-root[data-mt-theme="light"] [class*="bg-[#080d15]"]  { background-color: var(--mt-surface); }
+.mt-root[data-mt-theme="light"] [class*="bg-[#0d1520]"],
+.mt-root[data-mt-theme="light"] [class*="bg-[#0b121c]"],
+.mt-root[data-mt-theme="light"] [class*="bg-[#091118]"],
+.mt-root[data-mt-theme="light"] [class*="bg-[#071017]"],
+.mt-root[data-mt-theme="light"] [class*="bg-[#1a1710]"]  { background-color: var(--mt-surface-2); }
+.mt-root[data-mt-theme="light"] [class*="border-[#05080d]"],
+.mt-root[data-mt-theme="light"] [class*="ring-[#05080d]"]  { border-color: var(--mt-page); --tw-ring-color: var(--mt-page); }
+.mt-root[data-mt-theme="light"] [class*="border-[#0a1019]"] { border-color: var(--mt-surface); }
+
+/* image overlays that fade into the card surface */
+.mt-root[data-mt-theme="light"] [class*="from-[#0a1019]"],
+.mt-root[data-mt-theme="light"] [class*="from-[#091118]"] { --tw-gradient-from: var(--mt-surface); }
+.mt-root[data-mt-theme="light"] [class*="via-[#0a1019]"],
+.mt-root[data-mt-theme="light"] [class*="via-[#091118]"]  { --tw-gradient-via: transparent; }
+.mt-root[data-mt-theme="light"] .mt-dark-zone [class*="from-[#05080d]"] { --tw-gradient-from: var(--mt-page); }
+
+/* gold text needs to be darker on light surfaces */
+.mt-root[data-mt-theme="light"] [class*="text-[#e2c17f]"] { color: var(--mt-gold-text); }
+.mt-root[data-mt-theme="light"] [class*="text-[#f0d69a]"] { color: var(--mt-gold-soft); }
+.mt-root[data-mt-theme="light"] [class*="text-[#d4af6a]"] { color: var(--mt-gold); }
+/* …but not on solid gold buttons */
+.mt-root[data-mt-theme="light"] .mt-keep-gold { color: #1a1305; }
+
+/* softer elevation */
+.mt-root[data-mt-theme="light"] [class*="rgba(0,0,0"] { box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08); }
+.mt-root[data-mt-theme="light"] .mt-dark-zone[class*="rgba(0,0,0"] { box-shadow: 0 24px 60px rgba(15, 23, 42, 0.22); }
+
+/* charts + scrollbars */
+.mt-root[data-mt-theme="light"] .recharts-cartesian-grid line { stroke: rgba(15, 23, 42, 0.08); }
+.mt-root[data-mt-theme="light"] .mt-thin { scrollbar-color: rgba(15, 23, 42, 0.25) transparent; }
+.mt-root[data-mt-theme="light"] .mt-thin::-webkit-scrollbar-thumb { background: rgba(15, 23, 42, 0.2); }
+.mt-root[data-mt-theme="light"] .mt-dark-zone .recharts-cartesian-grid line { stroke: rgba(255, 255, 255, 0.06); }
+
+/* The app-wide index.css has an un-layered `button,input,select,textarea { font: inherit }`, which
+   beats the layered Tailwind text and font utilities. Inside this area let the utilities win again. */
+.mt-root :is(button, input, select, textarea) {
+  font: inherit;
+}
