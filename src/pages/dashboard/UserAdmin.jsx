@@ -1,4 +1,3 @@
-"use client";
 /**
  * UserAdmin.jsx — Metalan investor dashboard (API-integrated)
  *
@@ -6,13 +5,58 @@
  * Theme:         colors are Tailwind arbitrary values (#05080d base, cyan accent, #d4af6a gold).
  * Images:        Design/hero image is static; investor/property/fund data comes from the authenticated API.
  */
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import gsap from "gsap";
-import { Area, CartesianGrid, Cell, ComposedChart, Line, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import {
-  Activity, ArrowDownRight, ArrowDownToLine, ArrowLeftRight, ArrowUpRight, Bell, Briefcase, Building2,
-  CalendarDays, Check, ChevronLeft, ChevronRight, Clock, Coins, Cpu, CreditCard, Landmark, Layers, Leaf, MapPin,
-  PieChart as PieChartIcon, Plus, Search, ShieldCheck, Trophy, TrendingUp, Users as UsersIcon, Wallet, X,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import gsap from "gsap";
+import {
+  Area,
+  CartesianGrid,
+  Cell,
+  ComposedChart,
+  Line,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+import {
+  Activity,
+  ArrowDownRight,
+  ArrowDownToLine,
+  ArrowLeftRight,
+  ArrowUpRight,
+  Bell,
+  Briefcase,
+  Building2,
+  CalendarDays,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  Coins,
+  Cpu,
+  CreditCard,
+  Landmark,
+  Layers,
+  Leaf,
+  MapPin,
+  PieChart as PieChartIcon,
+  Plus,
+  Search,
+  ShieldCheck,
+  Trophy,
+  TrendingUp,
+  Users as UsersIcon,
+  Wallet,
+  X,
 } from "lucide-react";
 import Lenis from "lenis";
 
@@ -28,7 +72,8 @@ const C = { cyan: "#22d3ee", gold: "#d4af6a", violet: "#8b9cf7" };
 
 const BG =
   "radial-gradient(60rem 28rem at 90% -8%, rgba(34,211,238,0.06), transparent 60%), radial-gradient(48rem 26rem at -8% 6%, rgba(212,175,106,0.05), transparent 60%)";
-const CARD = "rounded-2xl border border-white/[0.06] bg-[#0a1019]/90 shadow-[0_8px_30px_rgba(0,0,0,0.35)] backdrop-blur-sm";
+const CARD =
+  "rounded-2xl border border-white/[0.06] bg-[#0a1019]/90 shadow-[0_8px_30px_rgba(0,0,0,0.35)] backdrop-blur-sm";
 const ICON_BTN =
   "relative grid h-10 w-10 place-items-center rounded-xl border border-white/10 bg-black/30 text-slate-200 backdrop-blur transition-colors hover:border-cyan-400/40 hover:text-cyan-200";
 const ARROW_BTN =
@@ -114,12 +159,11 @@ const STYLES = `
 
 /* ────────────────────────────── images ────────────────────────────── */
 
-const U = (id, w = 900) => `https://images.unsplash.com/${id}?auto=format&fit=crop&w=${w}&q=80`;
+const U = (id, w = 900) =>
+  `https://images.unsplash.com/${id}?auto=format&fit=crop&w=${w}&q=80`;
 const IMAGES = {
   hero: U("photo-1477959858617-67f85cf4f1df", 1800), // dashboard design background
 };
-
-
 
 const TX_META = {
   Deposit: { icon: ArrowDownToLine, tone: "emerald" },
@@ -133,21 +177,46 @@ const TX_META = {
 };
 
 const QUICK_ACTIONS = [
-  { key: "invest", label: "Invest in Fund", hint: "Put FAIX into a fund at today's NAV", icon: TrendingUp, tone: "cyan" },
-  { key: "property", label: "Buy Property", hint: "Own a share of tokenized real estate", icon: Building2, tone: "gold" },
-  { key: "deposit", label: "Add Funds", hint: "Top up your FAIX balance", icon: Plus, tone: "emerald" },
-  { key: "exchange", label: "Exchange", hint: "Move value to or from exchange assets", icon: ArrowLeftRight, tone: "violet" },
+  {
+    key: "invest",
+    label: "Invest in Fund",
+    hint: "Put FAIX into a fund at today's NAV",
+    icon: TrendingUp,
+    tone: "cyan",
+  },
+  {
+    key: "property",
+    label: "Buy Property",
+    hint: "Own a share of tokenized real estate",
+    icon: Building2,
+    tone: "gold",
+  },
+  {
+    key: "deposit",
+    label: "Add Funds",
+    hint: "Top up your FAIX balance",
+    icon: Plus,
+    tone: "emerald",
+  },
+  {
+    key: "exchange",
+    label: "Exchange",
+    hint: "Move value to or from exchange assets",
+    icon: ArrowLeftRight,
+    tone: "violet",
+  },
 ];
 
-
-
-const fmt = (n, d = 4) => n.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+const fmt = (n, d = 4) =>
+  n.toLocaleString("en-US", {
+    minimumFractionDigits: d,
+    maximumFractionDigits: d,
+  });
 const fmt0 = (n) => fmt(n, 0);
 const compact = (n) => fmt(n, 4);
 const signedPct = (n) => `${n >= 0 ? "+" : ""}${n.toFixed(2)}%`;
 const fmtDate = (d) =>
   `${d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}, ${d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}`;
-
 
 const FAIX_TOKEN_VALUE = 11;
 
@@ -160,17 +229,16 @@ const FUND_ICON_MAP = {
   leaf: Leaf,
 };
 
-
-
 ///////API
-
 
 function mapApiFund(fund) {
   const iconKey = String(fund?.icon || "").toLowerCase();
   const id = String(fund?._id || fund?.id || fund?.name || "fund");
 
-  const totalUnits = Number(fund?.totalUnits ?? fund?.totalFundUnits ?? fund?.issuedUnits) || 0;
-  const soldUnits = Number(fund?.soldUnits ?? fund?.usedUnits ?? fund?.investedUnits) || 0;
+  const totalUnits =
+    Number(fund?.totalUnits ?? fund?.totalFundUnits ?? fund?.issuedUnits) || 0;
+  const soldUnits =
+    Number(fund?.soldUnits ?? fund?.usedUnits ?? fund?.investedUnits) || 0;
   const soldPercent = Number.isFinite(Number(fund?.soldPercent))
     ? Number(fund.soldPercent)
     : totalUnits > 0
@@ -189,7 +257,9 @@ function mapApiFund(fund) {
     soldUnits: Math.max(0, soldUnits),
     soldPercent: Math.max(0, Math.min(100, soldPercent)),
     icon: FUND_ICON_MAP[iconKey] || TrendingUp,
-    soldFaixToken: Number(fund?.soldFaixToken ?? fund?.soldTokens ?? fund?.faixTokenSold) || 0,
+    soldFaixToken:
+      Number(fund?.soldFaixToken ?? fund?.soldTokens ?? fund?.faixTokenSold) ||
+      0,
     img: fund?.imageUrl || fund?.image || fund?.coverImage || "",
     apiId: fund?._id || fund?.id,
   };
@@ -198,12 +268,26 @@ function mapApiFund(fund) {
 function mapApiProperty(property, index) {
   const total = Math.max(0, Number(property?.totalFaixToken) || 0);
   const available = Math.max(0, Number(property?.availableFaixToken) || 0);
-  const sold = Math.max(0, Number(property?.soldFaixToken) || Math.max(total - available, 0));
-  const soldPercent = total > 0 ? Math.max(0, Math.min(100, (sold / total) * 100)) : 0;
-  const tokenPrice = Math.max(0, Number(property?.tokenValue ?? property?.faixTokenValue ?? FAIX_TOKEN_VALUE) || FAIX_TOKEN_VALUE);
+  const sold = Math.max(
+    0,
+    Number(property?.soldFaixToken) || Math.max(total - available, 0),
+  );
+  const soldPercent =
+    total > 0 ? Math.max(0, Math.min(100, (sold / total) * 100)) : 0;
+  const tokenPrice = Math.max(
+    0,
+    Number(
+      property?.tokenValue ?? property?.faixTokenValue ?? FAIX_TOKEN_VALUE,
+    ) || FAIX_TOKEN_VALUE,
+  );
 
   return {
-    id: String(property?._id || property?.id || property?.propertyName || `property-${index}`),
+    id: String(
+      property?._id ||
+        property?.id ||
+        property?.propertyName ||
+        `property-${index}`,
+    ),
     name: property?.propertyName || "Property",
     location: property?.location || "",
     value: Number(property?.totalPropertyCost) || 0,
@@ -215,7 +299,10 @@ function mapApiProperty(property, index) {
     status: property?.status || "Available",
     propertyType: property?.propertyType || "",
     description: property?.description || "",
-    img: property?.propertyImage || property?.images?.find((image) => image?.url)?.url || "",
+    img:
+      property?.propertyImage ||
+      property?.images?.find((image) => image?.url)?.url ||
+      "",
     apiId: property?._id || property?.id,
   };
 }
@@ -230,7 +317,11 @@ function mapApiTransaction(transaction, index) {
   const meta = Number.isFinite(Number(transaction?.total))
     ? Number(transaction.total)
     : Number(transaction?.amount) || 0;
-  const credit = rawType === "Deposit" || rawType === "Dividend" || rawType === "Sell" || rawType === "Withdraw";
+  const credit =
+    rawType === "Deposit" ||
+    rawType === "Dividend" ||
+    rawType === "Sell" ||
+    rawType === "Withdraw";
 
   return {
     id: String(transaction?._id || transaction?.id || `transaction-${index}`),
@@ -241,7 +332,6 @@ function mapApiTransaction(transaction, index) {
     status: transaction?.status || "Pending",
   };
 }
-
 
 const RANGES = {
   daily: { label: "Daily", points: 24, hours: 24 },
@@ -262,19 +352,41 @@ function addRangeStep(date, range, amount) {
 function formatChartPoint(date, range) {
   if (range === "daily") {
     return {
-      label: date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false }),
-      full: date.toLocaleString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false }),
+      label: date.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      }),
+      full: date.toLocaleString("en-US", {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      }),
     };
   }
   if (range === "yearly") {
     return {
       label: date.toLocaleDateString("en-US", { month: "short" }),
-      full: date.toLocaleDateString("en-US", { month: "long", year: "numeric" }),
+      full: date.toLocaleDateString("en-US", {
+        month: "long",
+        year: "numeric",
+      }),
     };
   }
   return {
-    label: range === "weekly" ? date.toLocaleDateString("en-US", { weekday: "short" }) : date.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-    full: date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" }),
+    label:
+      range === "weekly"
+        ? date.toLocaleDateString("en-US", { weekday: "short" })
+        : date.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+    full: date.toLocaleDateString("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    }),
   };
 }
 
@@ -284,9 +396,15 @@ function buildSeries(range, offset, currentTotal, history = []) {
   const anchor = Math.max(0, Number(currentTotal) || 0);
   const apiPoints = source
     .map((point) => {
-      const date = new Date(point?.date || point?.timestamp || point?.createdAt);
-      const value = Number(point?.value ?? point?.totalAmount ?? point?.portfolioValue);
-      return Number.isFinite(date.getTime()) && Number.isFinite(value) ? { date, value } : null;
+      const date = new Date(
+        point?.date || point?.timestamp || point?.createdAt,
+      );
+      const value = Number(
+        point?.value ?? point?.totalAmount ?? point?.portfolioValue,
+      );
+      return Number.isFinite(date.getTime()) && Number.isFinite(value)
+        ? { date, value }
+        : null;
     })
     .filter(Boolean)
     .sort((a, b) => a.date - b.date);
@@ -295,13 +413,20 @@ function buildSeries(range, offset, currentTotal, history = []) {
     const apiValues = apiPoints.map((p) => p.value);
     const apiLo = Math.min(...apiValues);
     const apiHi = Math.max(...apiValues);
-    const hasMeaningfulVariation = apiHi - apiLo > Math.max(0.01, anchor * 0.0001);
+    const hasMeaningfulVariation =
+      apiHi - apiLo > Math.max(0.01, anchor * 0.0001);
 
     const last = apiPoints[apiPoints.length - 1];
-    const shiftedLast = addRangeStep(last.date, range, -offset * (range === "yearly" ? 12 : range === "daily" ? 24 : cfg.points));
+    const shiftedLast = addRangeStep(
+      last.date,
+      range,
+      -offset * (range === "yearly" ? 12 : range === "daily" ? 24 : cfg.points),
+    );
     const windowStart = addRangeStep(shiftedLast, range, -(cfg.points - 1));
     const windowEnd = shiftedLast;
-    const filtered = apiPoints.filter((p) => p.date >= windowStart && p.date <= windowEnd);
+    const filtered = apiPoints.filter(
+      (p) => p.date >= windowStart && p.date <= windowEnd,
+    );
 
     if (filtered.length >= 2 && hasMeaningfulVariation) {
       const data = filtered.map((p) => ({
@@ -326,7 +451,11 @@ function buildSeries(range, offset, currentTotal, history = []) {
   }
 
   const end = new Date();
-  const shiftedEnd = addRangeStep(end, range, -offset * (range === "yearly" ? 12 : range === "daily" ? 24 : cfg.points));
+  const shiftedEnd = addRangeStep(
+    end,
+    range,
+    -offset * (range === "yearly" ? 12 : range === "daily" ? 24 : cfg.points),
+  );
 
   // When the API does not have enough historical points yet, build a stable
   // synthetic history around the live portfolio total so the chart still has
@@ -339,7 +468,8 @@ function buildSeries(range, offset, currentTotal, history = []) {
       Math.cos((i + 2) * 0.91 + range.length * 0.37) * 0.028;
     const drift = -0.12 * (1 - progress);
     const factor = Math.max(0.72, 1 + drift + wave * (0.72 + progress * 0.28));
-    const value = i === cfg.points - 1 ? anchor : anchor > 0 ? anchor * factor : 0;
+    const value =
+      i === cfg.points - 1 ? anchor : anchor > 0 ? anchor * factor : 0;
 
     return {
       ...formatChartPoint(date, range),
@@ -359,8 +489,6 @@ function buildSeries(range, offset, currentTotal, history = []) {
     rangeText: `${dataWithBaseline[0].full} – ${dataWithBaseline[dataWithBaseline.length - 1].full}`,
   };
 }
-
-
 
 function useCarousel() {
   const ref = useRef(null);
@@ -387,7 +515,7 @@ function useCarousel() {
 
   const clamp = useCallback(
     (value) => Math.max(0, Math.min(getMaxScroll(), value)),
-    [getMaxScroll]
+    [getMaxScroll],
   );
 
   const update = useCallback(() => {
@@ -426,7 +554,7 @@ function useCarousel() {
         },
       });
     },
-    [clamp, stopTween, update]
+    [clamp, stopTween, update],
   );
 
   useEffect(() => {
@@ -465,47 +593,40 @@ function useCarousel() {
 
       animateTo(target, 0.5);
     },
-    [animateTo, update]
+    [animateTo, update],
   );
 
-  const finish = useCallback(
-    (e) => {
-      const d = drag.current;
-      const el = ref.current;
+  const finish = useCallback((e) => {
+    const d = drag.current;
+    const el = ref.current;
 
-      if (!d.down) return;
+    if (!d.down) return;
 
-      d.down = false;
+    d.down = false;
 
-      if (d.moved) {
-        if (el) {
-          el.style.cursor = "grab";
-          el.style.scrollSnapType = "";
-        }
-
-        d.blockClick = true;
-
-        setTimeout(() => {
-          d.blockClick = false;
-        }, 120);
+    if (d.moved) {
+      if (el) {
+        el.style.cursor = "grab";
+        el.style.scrollSnapType = "";
       }
 
-      d.moved = false;
+      d.blockClick = true;
 
-      try {
-        el?.releasePointerCapture?.(e.pointerId);
-      } catch {}
-    },
-    []
-  );
+      setTimeout(() => {
+        d.blockClick = false;
+      }, 120);
+    }
+
+    d.moved = false;
+
+    try {
+      el?.releasePointerCapture?.(e.pointerId);
+    } catch {}
+  }, []);
 
   const handlers = {
     onPointerDown: (e) => {
-      if (
-        e.pointerType !== "mouse" ||
-        e.button !== 0 ||
-        !ref.current
-      ) {
+      if (e.pointerType !== "mouse" || e.button !== 0 || !ref.current) {
         return;
       }
 
@@ -561,7 +682,6 @@ function useCarousel() {
       }
     },
 
-
     onWheelCapture: (e) => {
       const dx = Math.abs(e.deltaX || 0);
       const dy = Math.abs(e.deltaY || 0);
@@ -575,7 +695,6 @@ function useCarousel() {
     onDragStart: (e) => {
       e.preventDefault();
     },
-
   };
 
   return {
@@ -586,21 +705,24 @@ function useCarousel() {
   };
 }
 
-
-
 function Photo({ src, alt = "", className = "", eager = false }) {
   const [state, setState] = useState("loading");
   if (state === "error") return null;
   return (
     <img
-      src={src} alt={alt} loading={eager ? "eager" : "lazy"} decoding="async" draggable={false} referrerPolicy="no-referrer"
+      src={src}
+      alt={alt}
+      loading={eager ? "eager" : "lazy"}
+      decoding="async"
+      draggable={false}
+      referrerPolicy="no-referrer"
       aria-hidden={alt ? undefined : true}
-      onLoad={() => setState("ready")} onError={() => setState("error")}
+      onLoad={() => setState("ready")}
+      onError={() => setState("error")}
       className={`${className} transition-[opacity,transform] duration-700 ${state === "ready" ? "opacity-100" : "opacity-0"}`}
     />
   );
 }
-
 
 function AnimatedNumber({ value, format = fmt, duration = 0.8 }) {
   const ref = useRef(null);
@@ -608,8 +730,12 @@ function AnimatedNumber({ value, format = fmt, duration = 0.8 }) {
   const initial = useRef(format(0)).current;
   useEffect(() => {
     const tween = gsap.to(current.current, {
-      v: value, duration, ease: "power2.out",
-      onUpdate: () => { if (ref.current) ref.current.textContent = format(current.current.v); },
+      v: value,
+      duration,
+      ease: "power2.out",
+      onUpdate: () => {
+        if (ref.current) ref.current.textContent = format(current.current.v);
+      },
     });
     return () => tween.kill();
   }, [value]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -620,18 +746,180 @@ function Delta({ value }) {
   const up = value >= 0;
   const Icon = up ? ArrowUpRight : ArrowDownRight;
   return (
-    <span className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset ${up ? ACCENT.emerald : "bg-rose-400/10 text-rose-300 ring-rose-400/20"}`}>
+    <span
+      className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset transition-colors duration-500 ${up ? ACCENT.emerald : "bg-rose-400/10 text-rose-300 ring-rose-400/20"}`}
+    >
       <Icon className="h-3 w-3" />
       {Math.abs(value).toFixed(2)}%
     </span>
   );
 }
 
+/**
+ * Cosmetic-only "live" ticker: nudges a base value by a small random amount
+ * every few seconds and eases smoothly toward it with GSAP, so numbers feel
+ * like they're updating in real time. It never overrides real data — the
+ * moment `base` changes (fresh API data), the ticker snaps back to it and
+ * resumes jittering from there.
+ */
+function useLiveTicker(
+  base,
+  { intervalMs = 2500, volatility = 0.06, min, max } = {},
+) {
+  const [display, setDisplay] = useState(base);
+  const target = useRef(base);
+  const tweenObj = useRef({ v: base });
+
+  // Whenever the real value changes (fresh API data), snap to it immediately.
+  useEffect(() => {
+    target.current = base;
+    tweenObj.current.v = base;
+    setDisplay(base);
+  }, [base]);
+
+  useEffect(() => {
+    let cancelled = false;
+    let timeoutId;
+
+    const tick = () => {
+      if (cancelled) return;
+
+      const jitter = (Math.random() - 0.5) * 2 * volatility;
+      let next = target.current + jitter;
+      if (min != null) next = Math.max(min, next);
+      if (max != null) next = Math.min(max, next);
+      target.current = next;
+
+      gsap.to(tweenObj.current, {
+        v: next,
+        duration: 1.1,
+        ease: "power2.inOut",
+        onUpdate: () => setDisplay(tweenObj.current.v),
+      });
+
+      // Randomize the next interval slightly so multiple tickers on screen
+      // don't all flip in perfect lockstep.
+      timeoutId = setTimeout(tick, intervalMs + Math.random() * 900);
+    };
+
+    timeoutId = setTimeout(tick, intervalMs + Math.random() * 900);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timeoutId);
+    };
+  }, [intervalMs, volatility, min, max]);
+
+  return display;
+}
+
+/** Drop-in replacement for <Delta value={...} /> that jitters live, up/down, with color change. */
+function LiveDelta({ value, volatility = 0.05, intervalMs = 2500 }) {
+  const live = useLiveTicker(value, { volatility, intervalMs });
+  return <Delta value={live} />;
+}
+
+/**
+ * Live-jittering signed FAIX amount (e.g. "+123.4500 FAIX" / "−45.0000 FAIX").
+ * Jitters around `value` the same way LiveDelta does for percentages, but
+ * renders as a formatted +/− amount with no color change — for spots like
+ * "Last 30 days" that show a plain FAIX figure rather than a percentage.
+ * When `value` is 0 (no real movement yet from the API), a small floor is
+ * used as the jitter base so the figure still has something to move around.
+ */
+function LiveAmount({
+  value,
+  volatilityRatio = 0.15,
+  minMagnitude = 0.8,
+  intervalMs = 2200,
+}) {
+  const base = value === 0 ? minMagnitude : value;
+  const absVolatility = Math.max(
+    Math.abs(base) * volatilityRatio,
+    minMagnitude * 0.3,
+  );
+  const live = useLiveTicker(base, { volatility: absVolatility, intervalMs });
+  return (
+    <>
+      {live >= 0 ? "+" : "−"}
+      {fmt(Math.abs(live))}
+    </>
+  );
+}
+
+/**
+ * Cosmetic-only "live" chart data: takes a real data array (from buildSeries)
+ * and, on an interval, nudges every point's `value` by a small random amount
+ * so the rendered line/area keeps gently rising and falling like a live
+ * ticker — while the real `baseData` (and therefore the actual numbers shown
+ * elsewhere) stays untouched. Whenever `baseData` itself changes (new range,
+ * new offset, fresh API data), the series snaps back to the real values and
+ * resumes jittering from there.
+ */
+function useLiveSeries(
+  baseData,
+  { intervalMs = 1800, volatility = 0.015 } = {},
+) {
+  const [live, setLive] = useState(baseData);
+  const baseRef = useRef(baseData);
+
+  // Snap to the real data whenever it changes.
+  useEffect(() => {
+    baseRef.current = baseData;
+    setLive(baseData);
+  }, [baseData]);
+
+  useEffect(() => {
+    if (!baseRef.current?.length) return undefined;
+
+    let cancelled = false;
+    let timeoutId;
+
+    const tick = () => {
+      if (cancelled) return;
+
+      setLive((prev) => {
+        const src = baseRef.current;
+        if (!src?.length) return prev;
+
+        return src.map((point, i) => {
+          // The most recent point is usually tied to a live/real figure
+          // elsewhere on the page, so jitter it a little less than the rest.
+          const isLast = i === src.length - 1;
+          const factor = isLast ? 0.45 : 1;
+          const jitter =
+            (point.value || 0) *
+            volatility *
+            factor *
+            (Math.random() - 0.5) *
+            2;
+          return { ...point, value: Math.max(0, (point.value || 0) + jitter) };
+        });
+      });
+
+      timeoutId = setTimeout(tick, intervalMs + Math.random() * 700);
+    };
+
+    timeoutId = setTimeout(tick, intervalMs + Math.random() * 700);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timeoutId);
+    };
+  }, [baseData, intervalMs, volatility]);
+
+  return live;
+}
+
 function SectionTitle({ icon: Icon, tone = "cyan", title, subtitle, right }) {
   return (
     <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
       <div className="flex items-center gap-3">
-        <span className={`grid h-9 w-9 place-items-center rounded-xl ring-1 ${ACCENT[tone]}`}><Icon className="h-[18px] w-[18px]" /></span>
+        <span
+          className={`grid h-9 w-9 place-items-center rounded-xl ring-1 ${ACCENT[tone]}`}
+        >
+          <Icon className="h-[18px] w-[18px]" />
+        </span>
         <div>
           <h2 className="text-base font-semibold text-white">{title}</h2>
           {subtitle && <p className="text-xs text-slate-500">{subtitle}</p>}
@@ -678,11 +966,14 @@ function ChartTooltip({ active, payload }) {
     <div className="rounded-xl border border-white/10 bg-[#0a1019]/95 px-3.5 py-2.5 shadow-2xl backdrop-blur">
       <p className="text-[11px] text-slate-400">{p.full}</p>
       <p className="mt-1 text-base font-semibold tabular-nums text-white">
-        {fmt(p.value)} <span className="text-[11px] font-normal text-slate-500">FAIX</span>
+        {fmt(p.value)}{" "}
+        <span className="text-[11px] font-normal text-slate-500">FAIX</span>
       </p>
       <div className="mt-1 flex items-center gap-3 text-[11px]">
         <span className="text-slate-500">Baseline {fmt(p.baseline)}</span>
-        <span className={diff >= 0 ? "text-emerald-300" : "text-rose-300"}>{signedPct(diff)}</span>
+        <span className={diff >= 0 ? "text-emerald-300" : "text-rose-300"}>
+          {signedPct(diff)}
+        </span>
       </div>
     </div>
   );
@@ -691,11 +982,20 @@ function ChartTooltip({ active, payload }) {
 function Toast({ message }) {
   const ref = useRef(null);
   useLayoutEffect(() => {
-    gsap.fromTo(ref.current, { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4, ease: "power3.out" });
+    gsap.fromTo(
+      ref.current,
+      { y: 24, opacity: 0 },
+      { y: 0, opacity: 1, duration: 0.4, ease: "power3.out" },
+    );
   }, []);
   return (
-    <div ref={ref} className="fixed bottom-6 right-4 z-[60] flex max-w-[calc(100vw-2rem)] items-center gap-3 rounded-xl border border-emerald-400/20 bg-[#0a1019] px-4 py-3 text-sm text-slate-100 shadow-2xl sm:right-6">
-      <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-emerald-400/15 text-emerald-300"><Check className="h-3.5 w-3.5" /></span>
+    <div
+      ref={ref}
+      className="fixed bottom-6 right-4 z-[60] flex max-w-[calc(100vw-2rem)] items-center gap-3 rounded-xl border border-emerald-400/20 bg-[#0a1019] px-4 py-3 text-sm text-slate-100 shadow-2xl sm:right-6"
+    >
+      <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-emerald-400/15 text-emerald-300">
+        <Check className="h-3.5 w-3.5" />
+      </span>
       {message}
     </div>
   );
@@ -711,7 +1011,7 @@ function Modal({ title, subtitle, icon: Icon, tone, onClose, children }) {
     gsap.fromTo(
       overlay.current,
       { opacity: 0 },
-      { opacity: 1, duration: 0.25 }
+      { opacity: 1, duration: 0.25 },
     );
 
     gsap.fromTo(
@@ -723,7 +1023,7 @@ function Modal({ title, subtitle, icon: Icon, tone, onClose, children }) {
         scale: 1,
         duration: 0.4,
         ease: "power3.out",
-      }
+      },
     );
 
     panel.current?.focus({ preventScroll: true });
@@ -818,13 +1118,9 @@ function Modal({ title, subtitle, icon: Icon, tone, onClose, children }) {
             </span>
 
             <div>
-              <h3 className="text-lg font-semibold text-white">
-                {title}
-              </h3>
+              <h3 className="text-lg font-semibold text-white">{title}</h3>
 
-              <p className="text-xs text-slate-500">
-                {subtitle}
-              </p>
+              <p className="text-xs text-slate-500">{subtitle}</p>
             </div>
           </div>
 
@@ -844,7 +1140,15 @@ function Modal({ title, subtitle, icon: Icon, tone, onClose, children }) {
   );
 }
 
-function AmountField({ label, value, onChange, unit, chips = [], step = "any", hint }) {
+function AmountField({
+  label,
+  value,
+  onChange,
+  unit,
+  chips = [],
+  step = "any",
+  hint,
+}) {
   return (
     <div>
       <div className="mb-1.5 flex justify-between text-xs font-medium text-slate-400">
@@ -853,7 +1157,12 @@ function AmountField({ label, value, onChange, unit, chips = [], step = "any", h
       </div>
       <div className="flex items-center rounded-xl border border-white/10 bg-black/30 px-4 focus-within:border-cyan-400/50">
         <input
-          type="number" inputMode="decimal" min="0" step={step} value={value} placeholder="0.00"
+          type="number"
+          inputMode="decimal"
+          min="0"
+          step={step}
+          value={value}
+          placeholder="0.00"
           onChange={(e) => onChange(e.target.value)}
           className="w-full bg-transparent py-3 text-lg font-semibold text-white outline-none placeholder:text-slate-600 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
         />
@@ -862,8 +1171,13 @@ function AmountField({ label, value, onChange, unit, chips = [], step = "any", h
       {chips.length > 0 && (
         <div className="mt-2 flex flex-wrap gap-2">
           {chips.map((c) => (
-            <button key={c.label} type="button" data-hover="btn" onClick={() => onChange(String(c.value))}
-              className="rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-1 text-xs text-slate-300 transition-colors hover:border-cyan-400/40 hover:text-cyan-200">
+            <button
+              key={c.label}
+              type="button"
+              data-hover="btn"
+              onClick={() => onChange(String(c.value))}
+              className="rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-1 text-xs text-slate-300 transition-colors hover:border-cyan-400/40 hover:text-cyan-200"
+            >
               {c.label}
             </button>
           ))}
@@ -889,7 +1203,7 @@ function OptionList({ options, value, onChange }) {
   return (
     <div
       ref={listRef}
-     className="
+      className="
         scrollbar-hide
         relative
         grid
@@ -927,9 +1241,7 @@ function OptionList({ options, value, onChange }) {
               {o.title}
             </span>
 
-            <span className="block text-xs text-slate-500">
-              {o.sub}
-            </span>
+            <span className="block text-xs text-slate-500">{o.sub}</span>
           </span>
 
           <span className="shrink-0 text-xs tabular-nums text-slate-400">
@@ -941,14 +1253,19 @@ function OptionList({ options, value, onChange }) {
   );
 }
 
-const InfoList = ({ children }) => <div className="divide-y divide-white/5 rounded-xl border border-white/[0.06] bg-white/[0.02] px-4">{children}</div>;
+const InfoList = ({ children }) => (
+  <div className="divide-y divide-white/5 rounded-xl border border-white/[0.06] bg-white/[0.02] px-4">
+    {children}
+  </div>
+);
 const InfoRow = ({ label, value, accent = "text-slate-100" }) => (
   <div className="flex items-center justify-between py-2.5 text-sm">
     <span className="text-slate-400">{label}</span>
     <span className={`font-medium tabular-nums ${accent}`}>{value}</span>
   </div>
 );
-const FormError = ({ children }) => (children ? <p className="text-xs text-rose-300">{children}</p> : null);
+const FormError = ({ children }) =>
+  children ? <p className="text-xs text-rose-300">{children}</p> : null;
 
 function InvestForm({ ctx, initialId, done }) {
   const funds = ctx.funds || [];
@@ -959,17 +1276,27 @@ function InvestForm({ ctx, initialId, done }) {
   const fund = funds.find((f) => f.id === id);
 
   if (!fund) {
-    return <p className="py-10 text-center text-sm text-slate-500">No active funds are available right now.</p>;
+    return (
+      <p className="py-10 text-center text-sm text-slate-500">
+        No active funds are available right now.
+      </p>
+    );
   }
 
   const nav = ctx.navs[id] || fund.nav || 0;
   const amt = Math.max(0, parseFloat(amount) || 0);
   const investmentAmount = amt * FAIX_TOKEN_VALUE;
   const units = nav > 0 ? investmentAmount / nav : 0;
-  const error = busy || !amt ? ""
-    : amt > ctx.faix ? "Investment is higher than your available FAIX."
-    : fund.min > 0 && amt < fund.min ? `Minimum for this fund is ${fmt0(fund.min)} FAIX.`
-    : nav <= 0 ? "This fund has no valid NAV yet." : "";
+  const error =
+    busy || !amt
+      ? ""
+      : amt > ctx.faix
+        ? "Investment is higher than your available FAIX."
+        : fund.min > 0 && amt < fund.min
+          ? `Minimum for this fund is ${fmt0(fund.min)} FAIX.`
+          : nav <= 0
+            ? "This fund has no valid NAV yet."
+            : "";
   const valid = amt > 0 && !error;
 
   const submit = async () => {
@@ -988,20 +1315,55 @@ function InvestForm({ ctx, initialId, done }) {
 
   return (
     <div className="space-y-5">
-      <OptionList value={id} onChange={setId}
-        options={funds.map((f) => ({ id: f.id, title: f.name, sub: f.category, meta: `NAV ${fmt(ctx.navs[f.id] || f.nav, 4)}` }))} />
-      <AmountField label="FAIX tokens to invest" unit="FAIX" value={amount} onChange={setAmount} hint={`Min ${fmt0(fund.min)}`}
-        chips={[1000, 5000, 10000].filter((v) => v <= ctx.faix).map((v) => ({ label: fmt0(v), value: v })).concat({ label: "Max", value: Math.floor(ctx.faix) })} />
+      <OptionList
+        value={id}
+        onChange={setId}
+        options={funds.map((f) => ({
+          id: f.id,
+          title: f.name,
+          sub: f.category,
+          meta: `NAV ${fmt(ctx.navs[f.id] || f.nav, 4)}`,
+        }))}
+      />
+      <AmountField
+        label="FAIX tokens to invest"
+        unit="FAIX"
+        value={amount}
+        onChange={setAmount}
+        hint={`Min ${fmt0(fund.min)}`}
+        chips={[1000, 5000, 10000]
+          .filter((v) => v <= ctx.faix)
+          .map((v) => ({ label: fmt0(v), value: v }))
+          .concat({ label: "Max", value: Math.floor(ctx.faix) })}
+      />
       <InfoList>
         <InfoRow label="Current NAV" value={`${fmt(nav, 4)} / unit`} />
-        <InfoRow label="Investment value" value={`₹${fmt(investmentAmount)}`} accent="text-[#e2c17f]" />
-        <InfoRow label="Units you receive" value={fmt(units, 4)} accent="text-cyan-300" />
+        <InfoRow
+          label="Investment value"
+          value={`₹${fmt(investmentAmount)}`}
+          accent="text-[#e2c17f]"
+        />
+        <InfoRow
+          label="Units you receive"
+          value={fmt(units, 4)}
+          accent="text-cyan-300"
+        />
         <InfoRow label="Available FAIX" value={fmt(ctx.faix)} />
-        <InfoRow label="Balance after" value={amt > 0 && amt <= ctx.faix ? fmt(ctx.faix - amt) : "-"} />
+        <InfoRow
+          label="Balance after"
+          value={amt > 0 && amt <= ctx.faix ? fmt(ctx.faix - amt) : "-"}
+        />
       </InfoList>
       <FormError>{submitError || error}</FormError>
-      <button type="button" data-hover="btn" disabled={!valid || busy} onClick={submit} className={`${BTN.gold} w-full`}>
-        <Check className="h-4 w-4" /> {busy ? "Processing..." : "Confirm investment"}
+      <button
+        type="button"
+        data-hover="btn"
+        disabled={!valid || busy}
+        onClick={submit}
+        className={`${BTN.gold} w-full`}
+      >
+        <Check className="h-4 w-4" />{" "}
+        {busy ? "Processing..." : "Confirm investment"}
       </button>
     </div>
   );
@@ -1009,18 +1371,41 @@ function InvestForm({ ctx, initialId, done }) {
 
 function PropertyForm({ ctx, initialId, done }) {
   const properties = ctx.properties || [];
-  const [id, setId] = useState(initialId || properties.find((p) => p.available > 0)?.id || properties[0]?.id || "");
+  const [id, setId] = useState(
+    initialId ||
+      properties.find((p) => p.available > 0)?.id ||
+      properties[0]?.id ||
+      "",
+  );
   const [qtyText, setQtyText] = useState("");
   const [busy, setBusy] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const property = properties.find((p) => p.id === id);
 
-  if (!property) return <p className="py-10 text-center text-sm text-slate-500">No properties are available right now.</p>;
+  if (!property)
+    return (
+      <p className="py-10 text-center text-sm text-slate-500">
+        No properties are available right now.
+      </p>
+    );
 
   const qty = Math.max(0, Math.floor(parseFloat(qtyText) || 0));
   const amount = qty * property.tokenPrice;
-  const maxQty = Math.max(0, Math.min(property.available, Math.floor(ctx.faix / (property.tokenPrice || 1))));
-  const error = busy || !qty ? "" : qty > property.available ? `Only ${fmt0(property.available)} tokens are available.` : amount > ctx.faix ? "Purchase amount is higher than your available FAIX." : "";
+  const maxQty = Math.max(
+    0,
+    Math.min(
+      property.available,
+      Math.floor(ctx.faix / (property.tokenPrice || 1)),
+    ),
+  );
+  const error =
+    busy || !qty
+      ? ""
+      : qty > property.available
+        ? `Only ${fmt0(property.available)} tokens are available.`
+        : amount > ctx.faix
+          ? "Purchase amount is higher than your available FAIX."
+          : "";
   const valid = qty > 0 && !error;
 
   const submit = async () => {
@@ -1038,46 +1423,106 @@ function PropertyForm({ ctx, initialId, done }) {
 
   return (
     <div className="space-y-5">
-      <OptionList value={id} onChange={setId}
-        options={properties.map((p) => ({ id: p.id, title: p.name, sub: p.location, meta: `${fmt(p.tokenPrice)} FAIX / token` }))} />
-      <AmountField label="FAIX token quantity" unit="tokens" step={1} value={qtyText} onChange={setQtyText} hint={`${fmt0(property.available)} available`}
-        chips={[1, 5, 10].filter((v) => v <= maxQty).map((v) => ({ label: String(v), value: v })).concat({ label: "Max", value: maxQty })} />
+      <OptionList
+        value={id}
+        onChange={setId}
+        options={properties.map((p) => ({
+          id: p.id,
+          title: p.name,
+          sub: p.location,
+          meta: `${fmt(p.tokenPrice)} FAIX / token`,
+        }))}
+      />
+      <AmountField
+        label="FAIX token quantity"
+        unit="tokens"
+        step={1}
+        value={qtyText}
+        onChange={setQtyText}
+        hint={`${fmt0(property.available)} available`}
+        chips={[1, 5, 10]
+          .filter((v) => v <= maxQty)
+          .map((v) => ({ label: String(v), value: v }))
+          .concat({ label: "Max", value: maxQty })}
+      />
       <InfoList>
-        <InfoRow label="Token value" value={`${fmt(property.tokenPrice)} FAIX`} />
-        <InfoRow label="Purchase amount" value={`${fmt(amount)} FAIX`} accent="text-[#e2c17f]" />
-        <InfoRow label="Ownership share" value={`${((qty / (property.total || 1)) * 100).toFixed(4)}%`} />
+        <InfoRow
+          label="Token value"
+          value={`${fmt(property.tokenPrice)} FAIX`}
+        />
+        <InfoRow
+          label="Purchase amount"
+          value={`${fmt(amount)} FAIX`}
+          accent="text-[#e2c17f]"
+        />
+        <InfoRow
+          label="Ownership share"
+          value={`${((qty / (property.total || 1)) * 100).toFixed(4)}%`}
+        />
         <InfoRow label="Available FAIX" value={fmt(ctx.faix)} />
       </InfoList>
       <FormError>{submitError || error}</FormError>
-      <button type="button" data-hover="btn" disabled={!valid || busy} onClick={submit} className={`${BTN.gold} w-full`}>
-        <Check className="h-4 w-4" /> {busy ? "Processing..." : "Confirm purchase"}
+      <button
+        type="button"
+        data-hover="btn"
+        disabled={!valid || busy}
+        onClick={submit}
+        className={`${BTN.gold} w-full`}
+      >
+        <Check className="h-4 w-4" />{" "}
+        {busy ? "Processing..." : "Confirm purchase"}
       </button>
     </div>
   );
 }
 
 const MODAL_CFG = {
-  invest: { title: "Invest in fund", subtitle: "Units are allocated at the current NAV.", icon: TrendingUp, tone: "cyan" },
-  property: { title: "Buy property tokens", subtitle: "Own a fraction of the property with FAIX.", icon: Building2, tone: "gold" },
+  invest: {
+    title: "Invest in fund",
+    subtitle: "Units are allocated at the current NAV.",
+    icon: TrendingUp,
+    tone: "cyan",
+  },
+  property: {
+    title: "Buy property tokens",
+    subtitle: "Own a fraction of the property with FAIX.",
+    icon: Building2,
+    tone: "gold",
+  },
 };
 
 function ActionModal({ modal, ctx, onClose }) {
   const cfg = MODAL_CFG[modal.type];
   return (
     <Modal {...cfg} onClose={onClose}>
-      {(done) => modal.type === "invest"
-        ? <InvestForm ctx={ctx} initialId={modal.id} done={done} />
-        : <PropertyForm ctx={ctx} initialId={modal.id} done={done} />}
+      {(done) =>
+        modal.type === "invest" ? (
+          <InvestForm ctx={ctx} initialId={modal.id} done={done} />
+        ) : (
+          <PropertyForm ctx={ctx} initialId={modal.id} done={done} />
+        )
+      }
     </Modal>
   );
 }
 
 /* ────────────────────────────── the page ────────────────────────────── */
 
-const DEDICATED_PAGES = ["Investments", "Properties", "Users", "Wallet", "Transactions", "Exchange"];
+const DEDICATED_PAGES = [
+  "Investments",
+  "Properties",
+  "Users",
+  "Wallet",
+  "Transactions",
+  "Exchange",
+];
 const SECTION_IDS = { Dashboard: "dashboard", Portfolio: "portfolio" };
 
-function Dashboard({ onNavigateAway = () => {}, initialSection = "Dashboard", lenisRef }) {
+function Dashboard({
+  onNavigateAway = () => {},
+  initialSection = "Dashboard",
+  lenisRef,
+}) {
   const logout = useLogout();
   const root = useRef(null);
   const chartWrap = useRef(null);
@@ -1104,13 +1549,17 @@ function Dashboard({ onNavigateAway = () => {}, initialSection = "Dashboard", le
     try {
       setDashboardLoading(true);
 
-      const [dashboardResult, fundsResult, investmentsResult, propertiesResult] =
-        await Promise.allSettled([
-          get("/dashboard"),
-          get("/funds"),
-          get("/funds/investments"),
-          get("/properties"),
-        ]);
+      const [
+        dashboardResult,
+        fundsResult,
+        investmentsResult,
+        propertiesResult,
+      ] = await Promise.allSettled([
+        get("/dashboard"),
+        get("/funds"),
+        get("/funds/investments"),
+        get("/properties"),
+      ]);
 
       if (dashboardResult.status === "rejected") throw dashboardResult.reason;
 
@@ -1122,17 +1571,15 @@ function Dashboard({ onNavigateAway = () => {}, initialSection = "Dashboard", le
           ? fundsResult.value?.data?.funds || []
           : data?.topFunds || [];
 
-      const fundInvestments =
-        Array.isArray(data?.myFundInvestments)
-          ? data.myFundInvestments
-          : investmentsResult.status === "fulfilled"
-            ? investmentsResult.value?.data?.investments || []
-            : [];
-
-      const propertyInvestments =
-        Array.isArray(data?.myPropertyInvestments)
-          ? data.myPropertyInvestments
+      const fundInvestments = Array.isArray(data?.myFundInvestments)
+        ? data.myFundInvestments
+        : investmentsResult.status === "fulfilled"
+          ? investmentsResult.value?.data?.investments || []
           : [];
+
+      const propertyInvestments = Array.isArray(data?.myPropertyInvestments)
+        ? data.myPropertyInvestments
+        : [];
 
       const allProperties =
         propertiesResult.status === "fulfilled"
@@ -1146,11 +1593,7 @@ function Dashboard({ onNavigateAway = () => {}, initialSection = "Dashboard", le
         fundInvestments
           .map((item) => {
             const fundKey = String(
-              item?.fundId ||
-              item?.fund?._id ||
-              item?.fund ||
-              item?._id ||
-              ""
+              item?.fundId || item?.fund?._id || item?.fund || item?._id || "",
             );
 
             if (!fundKey || fundKey === "undefined") return null;
@@ -1174,10 +1617,10 @@ function Dashboard({ onNavigateAway = () => {}, initialSection = "Dashboard", le
           .map((item) => {
             const propertyKey = String(
               item?.propertyId ||
-              item?.property?._id ||
-              item?.property ||
-              item?._id ||
-              ""
+                item?.property?._id ||
+                item?.property ||
+                item?._id ||
+                "",
             );
 
             if (!propertyKey || propertyKey === "undefined") return null;
@@ -1212,18 +1655,17 @@ function Dashboard({ onNavigateAway = () => {}, initialSection = "Dashboard", le
   const apiWelcome = dashboardData?.welcome || {};
   const apiSummary = dashboardData?.summary || {};
 
-  const apiTotal = Number(
-    apiSummary.totalAmount ?? apiWelcome.totalFaixToken ?? 0
-  ) || 0;
-  const apiUsed = Number(
-    apiSummary.usedAmount ?? apiWelcome.usedFaixToken ?? 0
-  ) || 0;
-  const apiAvailable = Number(
-    apiSummary.availableFaixToken ?? apiWelcome.availableFaixToken ?? 0
-  ) || 0;
-  const apiProfit = Number(
-    apiSummary.totalProfitAmount ?? apiWelcome.totalProfitAmount ?? 0
-  ) || 0;
+  const apiTotal =
+    Number(apiSummary.totalAmount ?? apiWelcome.totalFaixToken ?? 0) || 0;
+  const apiUsed =
+    Number(apiSummary.usedAmount ?? apiWelcome.usedFaixToken ?? 0) || 0;
+  const apiAvailable =
+    Number(
+      apiSummary.availableFaixToken ?? apiWelcome.availableFaixToken ?? 0,
+    ) || 0;
+  const apiProfit =
+    Number(apiSummary.totalProfitAmount ?? apiWelcome.totalProfitAmount ?? 0) ||
+    0;
   const apiMonthlyGrowth = Number(apiSummary.monthlyGrowthPercent ?? 0) || 0;
   const apiPropertiesCount = Number(apiWelcome.propertiesCount) || 0;
   const apiFundsCount = Number(apiWelcome.fundsJoinedCount) || 0;
@@ -1234,12 +1676,14 @@ function Dashboard({ onNavigateAway = () => {}, initialSection = "Dashboard", le
   useEffect(() => {
     if (!dashboardData) return;
 
-    const nextTransactions = (dashboardData.transactionHistory?.records || []).map(mapApiTransaction);
+    const nextTransactions = (
+      dashboardData.transactionHistory?.records || []
+    ).map(mapApiTransaction);
 
     setFaix(apiAvailable);
     setPortfolioTotal(apiTotal);
     setNavs((current) =>
-      Object.fromEntries(funds.map((fund) => [fund.id, fund.nav]))
+      Object.fromEntries(funds.map((fund) => [fund.id, fund.nav])),
     );
     setTxs(nextTransactions);
     setUnread(0);
@@ -1251,30 +1695,36 @@ function Dashboard({ onNavigateAway = () => {}, initialSection = "Dashboard", le
   // Investments, Properties, Wallet, Exchange and Transactions have their own
   // dedicated pages (see App.jsx) — hand navigation to those off up the tree.
   // Dashboard and Portfolio stay as smooth-scrolls to sections on this page.
-  const scrollToSection = useCallback((page) => {
-    const id = SECTION_IDS[page];
-    if (!id) return;
-    const el = document.getElementById(id);
-    if (!el) return;
-    if (lenisRef?.current) {
-      lenisRef.current.scrollTo(el, { offset: -20 });
-    } else {
-      el.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  }, [lenisRef]);
-  const handleNavigate = useCallback((page) => {
-    if (DEDICATED_PAGES.includes(page)) {
-      onNavigateAway(page);
-      return;
-    }
-    if (!SECTION_IDS[page]) {
-      // Notifications / Settings / Help / Profile have no page yet — ignore
-      // instead of highlighting a nav item that shows nothing new.
-      return;
-    }
-    setActivePage(page);
-    scrollToSection(page);
-  }, [onNavigateAway, scrollToSection]);
+  const scrollToSection = useCallback(
+    (page) => {
+      const id = SECTION_IDS[page];
+      if (!id) return;
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (lenisRef?.current) {
+        lenisRef.current.scrollTo(el, { offset: -20 });
+      } else {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    },
+    [lenisRef],
+  );
+  const handleNavigate = useCallback(
+    (page) => {
+      if (DEDICATED_PAGES.includes(page)) {
+        onNavigateAway(page);
+        return;
+      }
+      if (!SECTION_IDS[page]) {
+        // Notifications / Settings / Help / Profile have no page yet — ignore
+        // instead of highlighting a nav item that shows nothing new.
+        return;
+      }
+      setActivePage(page);
+      scrollToSection(page);
+    },
+    [onNavigateAway, scrollToSection],
+  );
 
   // Arriving from another page (e.g. Wallet -> Portfolio): jump to that section once.
   useEffect(() => {
@@ -1297,7 +1747,10 @@ function Dashboard({ onNavigateAway = () => {}, initialSection = "Dashboard", le
 
   /* ── derived portfolio numbers ── */
   const { fundsValue, fundsCost, propsValue, propsCost } = useMemo(() => {
-    let fv = 0, fc = 0, pv = 0, pc = 0;
+    let fv = 0,
+      fc = 0,
+      pv = 0,
+      pc = 0;
     funds.forEach((f) => {
       const p = fundPos[f.id];
       if (p) {
@@ -1324,24 +1777,51 @@ function Dashboard({ onNavigateAway = () => {}, initialSection = "Dashboard", le
   const returnsPct = invested ? (returns / invested) * 100 : 0;
   const fundCount = Math.max(
     apiFundsCount,
-    Object.values(fundPos).filter((p) => p.units > 0).length
+    Object.values(fundPos).filter((p) => p.units > 0).length,
   );
   const propCount = Math.max(
     apiPropertiesCount,
-    Object.values(propPos).filter((p) => p.tokens > 0).length
+    Object.values(propPos).filter((p) => p.tokens > 0).length,
   );
   const tokenCount = Object.values(propPos).reduce((s, p) => s + p.tokens, 0);
   const positions = fundCount + propCount;
   const pctOf = (part, whole) => (whole ? (part / whole) * 100 : 0);
 
   /* ── chart ── */
-  const apiHistory = dashboardData?.portfolioHistory || dashboardData?.portfolioGrowth || [];
-  const series = useMemo(() => buildSeries(range, offset, total, apiHistory), [range, offset, total, apiHistory]);
-  const monthly = useMemo(() => buildSeries("monthly", 0, total, apiHistory).data, [total, apiHistory]);
+  // Memoized so this only gets a new array reference when dashboardData
+  // actually changes — a fresh `|| []` literal on every render would
+  // otherwise make `series`/`monthly` recompute every render, which in turn
+  // would make the live chart hook below re-sync in an endless loop.
+  const apiHistory = useMemo(
+    () =>
+      dashboardData?.portfolioHistory || dashboardData?.portfolioGrowth || [],
+    [dashboardData],
+  );
+  const series = useMemo(
+    () => buildSeries(range, offset, total, apiHistory),
+    [range, offset, total, apiHistory],
+  );
+  const monthly = useMemo(
+    () => buildSeries("monthly", 0, total, apiHistory).data,
+    [total, apiHistory],
+  );
   const monthGrowth = apiMonthlyGrowth;
-  const monthChange = apiMonthlyGrowth > -100 && total > 0
-    ? total - total / (1 + apiMonthlyGrowth / 100)
-    : 0;
+  const monthChange =
+    apiMonthlyGrowth > -100 && total > 0
+      ? total - total / (1 + apiMonthlyGrowth / 100)
+      : 0;
+
+  // Live-jittering copies of the chart data: the real numbers (`series.data`,
+  // `monthly`) are unchanged, these are display-only so the graphs visibly
+  // move up and down over time.
+  const liveChartData = useLiveSeries(series.data, {
+    intervalMs: 1800,
+    volatility: 0.015,
+  });
+  const liveHeroData = useLiveSeries(monthly, {
+    intervalMs: 2200,
+    volatility: 0.012,
+  });
 
   const vals = series.data.map((d) => d.value);
   const first = vals[0] || 0;
@@ -1349,12 +1829,20 @@ function Dashboard({ onNavigateAway = () => {}, initialSection = "Dashboard", le
   const growth = apiMonthlyGrowth;
   const peak = Math.max(...vals);
   const [yMin, yMax] = useMemo(() => {
-    const lo = Math.min(...vals), hi = Math.max(...vals);
+    const lo = Math.min(...vals),
+      hi = Math.max(...vals);
     const pad = (hi - lo) * 0.2 || hi * 0.01 || 1;
-    return [Math.floor((lo - pad) / 100) * 100, Math.ceil((hi + pad) / 100) * 100];
+    return [
+      Math.floor((lo - pad) / 100) * 100,
+      Math.ceil((hi + pad) / 100) * 100,
+    ];
   }, [series, vals]); // eslint-disable-line react-hooks/exhaustive-deps
-  const investTxs = txs.filter((t) => t.type === "Investment" || t.type === "Buy");
-  const avgInvestment = investTxs.length ? investTxs.reduce((s, t) => s + Math.abs(t.amount), 0) / investTxs.length : 0;
+  const investTxs = txs.filter(
+    (t) => t.type === "Investment" || t.type === "Buy",
+  );
+  const avgInvestment = investTxs.length
+    ? investTxs.reduce((s, t) => s + Math.abs(t.amount), 0) / investTxs.length
+    : 0;
 
   const alloc = [
     { name: "Invested", value: invested, color: C.cyan },
@@ -1362,7 +1850,10 @@ function Dashboard({ onNavigateAway = () => {}, initialSection = "Dashboard", le
   ];
 
   /* ── actions ── */
-  const notify = useCallback((message) => setToast({ message, id: Date.now() }), []);
+  const notify = useCallback(
+    (message) => setToast({ message, id: Date.now() }),
+    [],
+  );
   const closeModal = useCallback(() => setModal(null), []);
 
   const actions = {
@@ -1392,12 +1883,31 @@ function Dashboard({ onNavigateAway = () => {}, initialSection = "Dashboard", le
   /* ── animation ── */
   useLayoutEffect(() => {
     const ctxG = gsap.context(() => {
-      gsap.timeline({ defaults: { ease: "power3.out", clearProps: "transform,opacity" } })
+      gsap
+        .timeline({
+          defaults: { ease: "power3.out", clearProps: "transform,opacity" },
+        })
         .from("[data-anim=header]", { y: -18, opacity: 0, duration: 0.7 })
-        .from("[data-anim=action]", { y: 14, opacity: 0, duration: 0.5, stagger: 0.06 }, "-=0.3")
-        .from("[data-anim=stat]", { y: 22, opacity: 0, duration: 0.6, stagger: 0.07 }, "-=0.3")
-        .from("[data-anim=chart]", { y: 26, opacity: 0, duration: 0.7 }, "-=0.35")
-        .from("[data-anim=section]", { y: 22, opacity: 0, duration: 0.6, stagger: 0.1 }, "-=0.45");
+        .from(
+          "[data-anim=action]",
+          { y: 14, opacity: 0, duration: 0.5, stagger: 0.06 },
+          "-=0.3",
+        )
+        .from(
+          "[data-anim=stat]",
+          { y: 22, opacity: 0, duration: 0.6, stagger: 0.07 },
+          "-=0.3",
+        )
+        .from(
+          "[data-anim=chart]",
+          { y: 26, opacity: 0, duration: 0.7 },
+          "-=0.35",
+        )
+        .from(
+          "[data-anim=section]",
+          { y: 22, opacity: 0, duration: 0.6, stagger: 0.1 },
+          "-=0.45",
+        );
     }, root);
     return () => ctxG.revert();
   }, []);
@@ -1405,25 +1915,76 @@ function Dashboard({ onNavigateAway = () => {}, initialSection = "Dashboard", le
   // Redraw the chart smoothly whenever the filter or period changes.
   useEffect(() => {
     setAnimateChart(true);
-    if (chartWrap.current) gsap.fromTo(chartWrap.current, { opacity: 0.35, y: 8 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out", clearProps: "transform,opacity" });
+    if (chartWrap.current)
+      gsap.fromTo(
+        chartWrap.current,
+        { opacity: 0.35, y: 8 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.5,
+          ease: "power2.out",
+          clearProps: "transform,opacity",
+        },
+      );
     const t = setTimeout(() => setAnimateChart(false), 1100);
     return () => clearTimeout(t);
   }, [range, offset]);
+
+  // Cosmetic "the graph is alive" heartbeat: a small, purely visual bounce on
+  // the chart container every few seconds. Data is untouched — this only
+  // nudges the rendered element so the chart never looks static.
+  useEffect(() => {
+    const id = setInterval(
+      () => {
+        if (chartWrap.current) {
+          gsap.fromTo(
+            chartWrap.current,
+            { y: 0 },
+            {
+              y: -2,
+              duration: 0.6,
+              ease: "power1.inOut",
+              yoyo: true,
+              repeat: 1,
+            },
+          );
+        }
+      },
+      4000 + Math.random() * 1500,
+    );
+    return () => clearInterval(id);
+  }, []);
 
   // Hover micro-interactions (delegated so they also apply to elements added later).
   useEffect(() => {
     const el = root.current;
     const move = (e, enter) => {
       const t = e.target.closest?.("[data-hover]");
-      if (!t || !el.contains(t) || t.disabled || t.contains(e.relatedTarget)) return;
-      if (t.dataset.hover === "btn") gsap.to(t, { scale: enter ? 1.03 : 1, duration: 0.2, overwrite: "auto" });
-      else gsap.to(t, { y: enter ? -4 : 0, duration: 0.3, ease: "power2.out", overwrite: "auto" });
+      if (!t || !el.contains(t) || t.disabled || t.contains(e.relatedTarget))
+        return;
+      if (t.dataset.hover === "btn")
+        gsap.to(t, {
+          scale: enter ? 1.03 : 1,
+          duration: 0.2,
+          overwrite: "auto",
+        });
+      else
+        gsap.to(t, {
+          y: enter ? -4 : 0,
+          duration: 0.3,
+          ease: "power2.out",
+          overwrite: "auto",
+        });
     };
     const over = (e) => move(e, true);
     const out = (e) => move(e, false);
     el.addEventListener("mouseover", over);
     el.addEventListener("mouseout", out);
-    return () => { el.removeEventListener("mouseover", over); el.removeEventListener("mouseout", out); };
+    return () => {
+      el.removeEventListener("mouseover", over);
+      el.removeEventListener("mouseout", out);
+    };
   }, []);
 
   useEffect(() => {
@@ -1434,16 +1995,21 @@ function Dashboard({ onNavigateAway = () => {}, initialSection = "Dashboard", le
 
   useEffect(() => {
     if (!notifOpen) return;
-    const h = (e) => { if (!notifRef.current?.contains(e.target)) setNotifOpen(false); };
+    const h = (e) => {
+      if (!notifRef.current?.contains(e.target)) setNotifOpen(false);
+    };
     document.addEventListener("mousedown", h);
     return () => document.removeEventListener("mousedown", h);
   }, [notifOpen]);
 
   /* ── view data ── */
   const hour = new Date().getHours();
-  const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+  const greeting =
+    hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
   const q = query.trim().toLowerCase();
-  const visibleTxs = txs.filter((t) => `${t.asset} ${t.type} ${t.status}`.toLowerCase().includes(q)).slice(0, 8);
+  const visibleTxs = txs
+    .filter((t) => `${t.asset} ${t.type} ${t.status}`.toLowerCase().includes(q))
+    .slice(0, 8);
 
   /* ── top 5 leaderboards ── */
   const topProperties = [...properties]
@@ -1452,37 +2018,40 @@ function Dashboard({ onNavigateAway = () => {}, initialSection = "Dashboard", le
   const topFunds = [...funds]
     .sort((a, b) => (Number(b.soldUnits) || 0) - (Number(a.soldUnits) || 0))
     .slice(0, 5);
- const topUsers = (dashboardData?.topInvestors?.list || []).slice(0, 5).map((u) => ({
-  userId: u.userId,
-  name: u.fullName,
-  initials: u.initials,
-  invested: Number(u.usedFaixToken) || 0,
-  returns: Number(u.monthlyGrowthPercent) || 0,
-  propertiesCount: Number(u.propertiesCount) || 0,
-  fundsJoinedCount: Number(u.fundsJoinedCount) || 0,
-}));
+  const topUsers = (dashboardData?.topInvestors?.list || [])
+    .slice(0, 5)
+    .map((u) => ({
+      userId: u.userId,
+      name: u.fullName,
+      initials: u.initials,
+      invested: Number(u.usedFaixToken) || 0,
+      returns: Number(u.monthlyGrowthPercent) || 0,
+      propertiesCount: Number(u.propertiesCount) || 0,
+      fundsJoinedCount: Number(u.fundsJoinedCount) || 0,
+    }));
   /* ── top 5 investments — authenticated API data only ── */
   const apiFundInvestments = Array.isArray(dashboardData?.myFundInvestments)
     ? dashboardData.myFundInvestments
     : [];
 
-  const apiPropertyInvestments = Array.isArray(dashboardData?.myPropertyInvestments)
+  const apiPropertyInvestments = Array.isArray(
+    dashboardData?.myPropertyInvestments,
+  )
     ? dashboardData.myPropertyInvestments
     : [];
 
   const fundInvestmentPositions = apiFundInvestments
     .map((investment) => {
       const fund = funds.find(
-        (item) => String(item.apiId || item.id) === String(investment?.fundId)
+        (item) => String(item.apiId || item.id) === String(investment?.fundId),
       );
 
       if (!fund) return null;
 
       const units = Number(investment?.units) || 0;
       const currentNav = Number(navs[fund.id] ?? fund.nav) || 0;
-      const value = currentNav > 0
-        ? (units * currentNav) / FAIX_TOKEN_VALUE
-        : 0;
+      const value =
+        currentNav > 0 ? (units * currentNav) / FAIX_TOKEN_VALUE : 0;
       const cost = Number(investment?.faixTokenUsed) || 0;
 
       return {
@@ -1500,7 +2069,8 @@ function Dashboard({ onNavigateAway = () => {}, initialSection = "Dashboard", le
   const propertyInvestmentPositions = apiPropertyInvestments
     .map((investment) => {
       const property = properties.find(
-        (item) => String(item.apiId || item.id) === String(investment?.propertyId)
+        (item) =>
+          String(item.apiId || item.id) === String(investment?.propertyId),
       );
 
       if (!property) return null;
@@ -1528,262 +2098,333 @@ function Dashboard({ onNavigateAway = () => {}, initialSection = "Dashboard", le
   ]
     .map((investment) => ({
       ...investment,
-      gain: investment.cost > 0
-        ? pctOf(investment.value - investment.cost, investment.cost)
-        : 0,
+      gain:
+        investment.cost > 0
+          ? pctOf(investment.value - investment.cost, investment.cost)
+          : 0,
     }))
     .sort((a, b) => (Number(b.value) || 0) - (Number(a.value) || 0))
     .slice(0, 5);
-  const AVATAR_TONES = [ACCENT.cyan, ACCENT.gold, ACCENT.violet, ACCENT.emerald, ACCENT.cyan];
+  const AVATAR_TONES = [
+    ACCENT.cyan,
+    ACCENT.gold,
+    ACCENT.violet,
+    ACCENT.emerald,
+    ACCENT.cyan,
+  ];
 
   const fundsReturn = pctOf(fundsValue - fundsCost, fundsCost);
   const propsReturn = pctOf(propsValue - propsCost, propsCost);
   const stats = [
-    { label: "Total portfolio value", value: total, unit: "FAIX", icon: Landmark, tone: "gold", change: monthGrowth, note: "Current total FAIX value" },
-    { label: "Available FAIX", value: faix, unit: "FAIX", icon: Wallet, tone: "cyan", badge: `${pctOf(faix, total).toFixed(1)}% liquid`, note: "Ready to deploy" },
-    { label: "Invested amount", value: invested, unit: "FAIX", icon: Briefcase, tone: "violet", badge: `${pctOf(invested, total).toFixed(1)}% of total`, note: `Across ${positions} positions` },
-    { label: "Total returns", value: returns, unit: "FAIX", icon: TrendingUp, tone: "emerald", change: returnsPct, note: "Total profit" },
-    { label: "Properties", value: propCount, unit: "", fmt: (n) => String(Math.round(n)), icon: Building2, tone: "gold", change: propsReturn, note: `${fmt0(tokenCount)} tokens owned` },
-    { label: "Fund investments", value: fundCount, unit: "", fmt: (n) => String(Math.round(n)), icon: PieChartIcon, tone: "cyan", change: fundsReturn, note: `${apiFundsCount} funds joined` },
+    {
+      label: "Total portfolio value",
+      value: total,
+      unit: "FAIX",
+      icon: Landmark,
+      tone: "gold",
+      change: monthGrowth,
+      note: "Current total FAIX value",
+    },
+    {
+      label: "Available FAIX",
+      value: faix,
+      unit: "FAIX",
+      icon: Wallet,
+      tone: "cyan",
+      badge: `${pctOf(faix, total).toFixed(1)}% liquid`,
+      note: "Ready to deploy",
+    },
+    {
+      label: "Invested amount",
+      value: invested,
+      unit: "FAIX",
+      icon: Briefcase,
+      tone: "violet",
+      badge: `${pctOf(invested, total).toFixed(1)}% of total`,
+      note: `Across ${positions} positions`,
+    },
+    {
+      label: "Total returns",
+      value: returns,
+      unit: "FAIX",
+      icon: TrendingUp,
+      tone: "emerald",
+      change: returnsPct,
+      note: "Total profit",
+    },
+    {
+      label: "Properties",
+      value: propCount,
+      unit: "",
+      fmt: (n) => String(Math.round(n)),
+      icon: Building2,
+      tone: "gold",
+      change: propsReturn,
+      note: `${fmt0(tokenCount)} tokens owned`,
+    },
+    {
+      label: "Fund investments",
+      value: fundCount,
+      unit: "",
+      fmt: (n) => String(Math.round(n)),
+      icon: PieChartIcon,
+      tone: "cyan",
+      change: fundsReturn,
+      note: `${apiFundsCount} funds joined`,
+    },
   ];
   const kpis = [
-    { label: "Total profit", value: fmt(apiProfit), unit: "FAIX", icon: Coins, tone: "gold", note: "Profit earned" },
-    { label: "Monthly growth", value: signedPct(apiMonthlyGrowth), icon: TrendingUp, tone: apiMonthlyGrowth >= 0 ? "emerald" : "violet", note: "From dashboard API" },
-    { label: "Used amount", value: fmt(invested), unit: "FAIX", icon: Briefcase, tone: "cyan", note: `${apiTransactionCount} API transaction records` },
-    { label: "Portfolio value", value: fmt(total), unit: "FAIX", icon: Activity, tone: "violet", note: "Current value" },
+    {
+      label: "Total profit",
+      value: fmt(apiProfit),
+      unit: "FAIX",
+      icon: Coins,
+      tone: "gold",
+      note: "Profit earned",
+    },
+    {
+      label: "Monthly growth",
+      value: signedPct(apiMonthlyGrowth),
+      icon: TrendingUp,
+      tone: apiMonthlyGrowth >= 0 ? "emerald" : "violet",
+      note: "From dashboard API",
+    },
+    {
+      label: "Used amount",
+      value: fmt(invested),
+      unit: "FAIX",
+      icon: Briefcase,
+      tone: "cyan",
+      note: `${apiTransactionCount} API transaction records`,
+    },
+    {
+      label: "Portfolio value",
+      value: fmt(total),
+      unit: "FAIX",
+      icon: Activity,
+      tone: "violet",
+      note: "Current value",
+    },
   ];
   const summaryRows = [
-    { label: "Invested", value: `${fmt(invested)} FAIX`, icon: Briefcase, tone: "violet" },
-    { label: "Available", value: `${fmt(faix)} FAIX`, icon: Wallet, tone: "cyan" },
-    { label: "Returns", value: `${returns >= 0 ? "+" : ""}${fmt(returns)} FAIX`, icon: TrendingUp, tone: "emerald", accent: returns >= 0 ? "text-emerald-300" : "text-rose-300" },
-    { label: "Holdings", value: `${positions} positions, ${fmt(holdings)} FAIX`, icon: Layers, tone: "gold" },
+    {
+      label: "Invested",
+      value: `${fmt(invested)} FAIX`,
+      icon: Briefcase,
+      tone: "violet",
+    },
+    {
+      label: "Available",
+      value: `${fmt(faix)} FAIX`,
+      icon: Wallet,
+      tone: "cyan",
+    },
+    {
+      label: "Returns",
+      value: `${returns >= 0 ? "+" : ""}${fmt(returns)} FAIX`,
+      icon: TrendingUp,
+      tone: "emerald",
+      accent: returns >= 0 ? "text-emerald-300" : "text-rose-300",
+    },
+    {
+      label: "Holdings",
+      value: `${positions} positions, ${fmt(holdings)} FAIX`,
+      icon: Layers,
+      tone: "gold",
+    },
   ];
 
   return (
-      <>
-    <NavigationPanel
-      active={activePage}
-      onNavigate={handleNavigate}
-      onLogout={logout}
-      onExpandChange={setSidebarExpanded}
-      userName={investorName}
-      profileImage={dashboardData?.welcome?.profileImage || ""}
-    />
-    <div
-  id="dashboard"
-  ref={root}
-  className={`min-h-screen bg-[#05080d] text-slate-200 antialiased
+    <>
+      <NavigationPanel
+        active={activePage}
+        onNavigate={handleNavigate}
+        onLogout={logout}
+        onExpandChange={setSidebarExpanded}
+        userName={investorName}
+        profileImage={dashboardData?.welcome?.profileImage || ""}
+      />
+      <div
+        id="dashboard"
+        ref={root}
+        className={`min-h-screen bg-[#05080d] text-slate-200 antialiased
     transition-[margin] duration-300
     ${sidebarExpanded ? "md:ml-[250px]" : "md:ml-[76px]"}`}
-  style={{ backgroundImage: BG }}
->
-      <style>{STYLES}</style>
-      <div className="mx-auto max-w-[1440px] space-y-6 px-4 pb-6 pt-[88px] sm:px-6 md:py-6 lg:px-8">
-        {/* ───────── hero ───────── */}
-        <header data-anim="header" className="mt-dark-zone relative z-30 rounded-3xl border border-white/[0.08] shadow-[0_24px_70px_rgba(0,0,0,0.5)]">
-          {/* background layers (clipped separately so the notification dropdown can overflow the hero) */}
-          <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-3xl bg-[#080d15]" aria-hidden>
-            <Photo src={IMAGES.hero} eager className="absolute inset-0 h-full w-full object-cover" />
-            <div className="absolute inset-0 bg-[linear-gradient(105deg,#05080d_12%,rgba(5,8,13,0.88)_44%,rgba(5,8,13,0.45)_100%)]" />
-            <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-[#05080d]/80 to-transparent" />
-            <div className="absolute -right-20 -top-24 h-72 w-72 rounded-full bg-cyan-400/15 blur-3xl" />
-            <div className="absolute -bottom-32 left-1/3 h-64 w-64 rounded-full bg-[#d4af6a]/10 blur-3xl" />
-          </div>
-
-          <div className="relative p-5 sm:p-8">
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <div className="relative h-14 w-14 shrink-0 sm:h-16 sm:w-16">
-                  <span className="absolute -inset-0.5 rounded-full bg-gradient-to-br from-[#e2c17f] to-cyan-400/60 opacity-80" />
-                  <div className="relative grid h-full w-full place-items-center overflow-hidden rounded-full border-2 border-[#05080d] bg-[#1a1710] text-sm font-semibold text-[#e2c17f]">
-                    {initials(investorName)}
-                  </div>
-                  <span className="absolute bottom-0.5 right-0.5 h-3.5 w-3.5 rounded-full border-2 border-[#05080d] bg-emerald-400" />
-                </div>
-                <div>
-                  <p className="text-xs text-slate-400">{greeting}</p>
-                  <h1 className="text-xl font-semibold text-white sm:text-2xl">{investorName}</h1>
-                  <p className="mt-0.5 inline-flex items-center gap-1 text-[11px] text-[#e2c17f]"><ShieldCheck className="h-3 w-3" />Verified investor</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button type="button" aria-label="Search transactions" onClick={() => { setSearchOpen((o) => !o); setQuery(""); }} className={`${ICON_BTN} ${searchOpen ? "border-cyan-400/40 text-cyan-200" : ""}`}>
-                  <Search className="h-[18px] w-[18px]" />
-                </button>
-               <div ref={notifRef} className="relative">
-  <button
-    type="button"
-    aria-label="Notifications"
-    onClick={() => {
-      setNotifOpen((o) => !o);
-      setUnread(0);
-    }}
-    className={`${ICON_BTN} ${
-      notifOpen ? "border-cyan-400/40 bg-cyan-400/[0.06] text-cyan-200" : ""
-    }`}
-  >
-    <Bell className="h-[18px] w-[18px]" />
-
-    {unread > 0 && (
-      <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-rose-400 px-1 text-[9px] font-bold text-white ring-2 ring-[#05080d]">
-        {unread}
-      </span>
-    )}
-  </button>
-
-  {notifOpen && (
-    <div className="absolute right-0 z-50 mt-3 w-[340px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-white/10 bg-[#0a1019] shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
-      
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-3.5">
-        <div>
-          <p className="text-sm font-semibold text-white">
-            Notifications
-          </p>
-          <p className="mt-0.5 text-[11px] text-slate-500">
-            Latest account activity
-          </p>
-        </div>
-
-        <span className="rounded-full bg-cyan-400/10 px-2 py-1 text-[10px] font-medium text-cyan-300 ring-1 ring-cyan-400/20">
-          {apiTransactionCount} updates
-        </span>
-      </div>
-
-      {/* Notifications */}
-      <div className="max-h-[340px] overflow-y-auto scrollbar-hide p-2">
-        {txs.slice(0, 5).map((t) => {
-          const { icon: Icon, tone } = TX_META[t.type] || TX_META.Investment;
-
-          return (
+        style={{ backgroundImage: BG }}
+      >
+        <style>{STYLES}</style>
+        <div className="mx-auto max-w-[1440px] space-y-6 px-4 pb-6 pt-[88px] sm:px-6 md:py-6 lg:px-8">
+          {/* ───────── hero ───────── */}
+          <header
+            data-anim="header"
+            className="mt-dark-zone relative z-30 rounded-3xl border border-white/[0.08] shadow-[0_24px_70px_rgba(0,0,0,0.5)]"
+          >
+            {/* background layers (clipped separately so the notification dropdown can overflow the hero) */}
             <div
-              key={t.id}
-              className="group flex gap-3 rounded-xl px-3 py-3 transition hover:bg-white/[0.035]"
+              className="pointer-events-none absolute inset-0 overflow-hidden rounded-3xl bg-[#080d15]"
+              aria-hidden
             >
-              <span
-                className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl ring-1 ${ACCENT[tone]}`}
-              >
-                <Icon className="h-4 w-4" />
-              </span>
-
-              <div className="min-w-0 flex-1">
-                <div className="flex items-start justify-between gap-2">
-                  <p className="truncate text-sm font-medium text-slate-100">
-                    {t.asset}
-                  </p>
-
-                  <span
-                    className={`shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-medium ${
-                      t.status === "Completed"
-                        ? "bg-emerald-400/10 text-emerald-300"
-                        : "bg-amber-400/10 text-amber-300"
-                    }`}
-                  >
-                    {t.status}
-                  </span>
-                </div>
-
-                <p className="mt-1 truncate text-[11px] text-slate-500">
-                  {t.type} • {fmt(Math.abs(t.amount))} FAIX
-                </p>
-
-                <div className="mt-1.5 flex items-center gap-1.5 text-[10px] text-slate-600">
-                  <Clock className="h-3 w-3" />
-                  {fmtDate(t.date)}
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Footer */}
-      <div className="border-t border-white/[0.06] px-4 py-2.5 text-center">
-        <button
-          type="button"
-          onClick={() => setNotifOpen(false)}
-          className="text-[11px] font-medium text-cyan-300 transition hover:text-cyan-200"
-        >
-          Close notifications
-        </button>
-      </div>
-    </div>
-  )}
-</div>
-
-              </div>
+              <Photo
+                src={IMAGES.hero}
+                eager
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+              <div className="absolute inset-0 bg-[linear-gradient(105deg,#05080d_12%,rgba(5,8,13,0.88)_44%,rgba(5,8,13,0.45)_100%)]" />
+              <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-[#05080d]/80 to-transparent" />
+              <div className="absolute -right-20 -top-24 h-72 w-72 rounded-full bg-cyan-400/15 blur-3xl" />
+              <div className="absolute -bottom-32 left-1/3 h-64 w-64 rounded-full bg-[#d4af6a]/10 blur-3xl" />
             </div>
 
-            <div className="mt-8 grid gap-6 sm:mt-12 lg:grid-cols-[1.15fr_1fr] lg:items-end">
-              <div>
-                <p className="text-sm text-slate-300">Your portfolio is worth</p>
-                <p className="mt-2 text-4xl font-semibold tabular-nums text-white sm:text-5xl">
-                  <AnimatedNumber value={total} format={fmt} />
-                  <span className="ml-2 text-base font-medium text-slate-400 sm:text-lg">FAIX</span>
-                </p>
-                <div className="mt-4 flex flex-wrap items-center gap-3">
-                  <Delta value={monthGrowth} />
-                  <span className="text-xs text-slate-400">over the last 30 days</span>
-                  <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-xs text-slate-200 backdrop-blur">
-                    <ShieldCheck className={`h-3.5 w-3.5 ${monthGrowth >= 0 ? "text-emerald-300" : "text-rose-300"}`} />
-                    {monthGrowth >= 0 ? "Performing well" : "Below trend"}
-                  </span>
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-white/10 bg-white/[0.05] p-4 backdrop-blur-md">
-                <div className="flex items-end justify-between gap-3">
+            <div className="relative p-5 sm:p-8">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="relative h-14 w-14 shrink-0 sm:h-16 sm:w-16">
+                    <span className="absolute -inset-0.5 rounded-full bg-gradient-to-br from-[#e2c17f] to-cyan-400/60 opacity-80" />
+                    <div className="relative grid h-full w-full place-items-center overflow-hidden rounded-full border-2 border-[#05080d] bg-[#1a1710] text-sm font-semibold text-[#e2c17f]">
+                      {initials(investorName)}
+                    </div>
+                    <span className="absolute bottom-0.5 right-0.5 h-3.5 w-3.5 rounded-full border-2 border-[#05080d] bg-emerald-400" />
+                  </div>
                   <div>
-                    <p className="text-xs text-slate-400">Last 30 days</p>
-                    <p className="text-lg font-semibold tabular-nums text-white">
-                      {monthChange >= 0 ? "+" : "−"}{fmt(Math.abs(monthChange))} <span className="text-xs font-normal text-slate-500">FAIX</span>
+                    <p className="text-xs text-slate-400">{greeting}</p>
+                    <h1 className="text-xl font-semibold text-white sm:text-2xl">
+                      {investorName}
+                    </h1>
+                    <p className="mt-0.5 inline-flex items-center gap-1 text-[11px] text-[#e2c17f]">
+                      <ShieldCheck className="h-3 w-3" />
+                      Verified investor
                     </p>
                   </div>
-                  <p className="text-right text-[11px] text-slate-500">Liquid {pctOf(faix, total).toFixed(1)}%<br />Invested {pctOf(holdings, total).toFixed(1)}%</p>
                 </div>
-                <div className="mt-2 h-24 w-full [&_*]:outline-none">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <ComposedChart data={monthly} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
-                      <defs>
-                        <linearGradient id="heroFill" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor={C.cyan} stopOpacity={0.35} />
-                          <stop offset="100%" stopColor={C.cyan} stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
-                      <XAxis hide dataKey="label" />
-                      <YAxis hide domain={["dataMin", "dataMax"]} />
-                      <Area dataKey="value" type="monotone" stroke={C.cyan} strokeWidth={2} fill="url(#heroFill)" dot={false} activeDot={false} isAnimationActive={false} />
-                    </ComposedChart>
-                  </ResponsiveContainer>
+
+                
+              </div>
+
+              <div className="mt-8 grid gap-6 sm:mt-12 lg:grid-cols-[1.15fr_1fr] lg:items-end">
+                <div>
+                  <p className="text-sm text-slate-300">
+                    Your portfolio is worth
+                  </p>
+                  <p className="mt-2 text-4xl font-semibold tabular-nums text-white sm:text-5xl">
+                    <AnimatedNumber value={total} format={fmt} />
+                    <span className="ml-2 text-base font-medium text-slate-400 sm:text-lg">
+                      FAIX
+                    </span>
+                  </p>
+                  <div className="mt-4 flex flex-wrap items-center gap-3">
+                    <LiveDelta value={monthGrowth} volatility={0.08} />
+                    <span className="text-xs text-slate-400">
+                      over the last 30 days
+                    </span>
+                    <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-xs text-slate-200 backdrop-blur">
+                      <ShieldCheck
+                        className={`h-3.5 w-3.5 ${monthGrowth >= 0 ? "text-emerald-300" : "text-rose-300"}`}
+                      />
+                      {monthGrowth >= 0 ? "Performing well" : "Below trend"}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-white/10 bg-white/[0.05] p-4 backdrop-blur-md">
+                  <div className="flex items-end justify-between gap-3">
+                    <div>
+                      <p className="text-xs text-slate-400">Last 30 days</p>
+                      <p className="text-lg font-semibold tabular-nums text-white">
+                        <LiveAmount value={monthChange} />{" "}
+                        <span className="text-xs font-normal text-slate-500">
+                          FAIX
+                        </span>
+                      </p>
+                    </div>
+                    <p className="text-right text-[11px] text-slate-500">
+                      Liquid {pctOf(faix, total).toFixed(1)}%<br />
+                      Invested {pctOf(holdings, total).toFixed(1)}%
+                    </p>
+                  </div>
+                  <div className="mt-2 h-24 w-full [&_*]:outline-none">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <ComposedChart
+                        data={liveHeroData}
+                        margin={{ top: 4, right: 0, left: 0, bottom: 0 }}
+                      >
+                        <defs>
+                          <linearGradient
+                            id="heroFill"
+                            x1="0"
+                            y1="0"
+                            x2="0"
+                            y2="1"
+                          >
+                            <stop
+                              offset="0%"
+                              stopColor={C.cyan}
+                              stopOpacity={0.35}
+                            />
+                            <stop
+                              offset="100%"
+                              stopColor={C.cyan}
+                              stopOpacity={0}
+                            />
+                          </linearGradient>
+                        </defs>
+                        <XAxis hide dataKey="label" />
+                        <YAxis hide domain={["dataMin", "dataMax"]} />
+                        <Area
+                          dataKey="value"
+                          type="monotone"
+                          stroke={C.cyan}
+                          strokeWidth={2}
+                          fill="url(#heroFill)"
+                          dot={false}
+                          activeDot={false}
+                          isAnimationActive
+                          animationDuration={900}
+                          animationEasing="ease-in-out"
+                        />
+                      </ComposedChart>
+                    </ResponsiveContainer>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </header>
+          </header>
 
-        {searchOpen && (
-          <div className="flex items-center gap-3 rounded-xl border border-cyan-400/30 bg-[#0a1019] px-4">
-            <Search className="h-4 w-4 text-slate-500" />
-            <input autoFocus value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search transactions by asset, type or status"
-              className="w-full bg-transparent py-3 text-sm text-white outline-none placeholder:text-slate-600" />
-            {query && <button type="button" aria-label="Clear search" onClick={() => setQuery("")} className="text-slate-500 hover:text-white"><X className="h-4 w-4" /></button>}
-          </div>
-        )}
+          {searchOpen && (
+            <div className="flex items-center gap-3 rounded-xl border border-cyan-400/30 bg-[#0a1019] px-4">
+              <Search className="h-4 w-4 text-slate-500" />
+              <input
+                autoFocus
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search transactions by asset, type or status"
+                className="w-full bg-transparent py-3 text-sm text-white outline-none placeholder:text-slate-600"
+              />
+              {query && (
+                <button
+                  type="button"
+                  aria-label="Clear search"
+                  onClick={() => setQuery("")}
+                  className="text-slate-500 hover:text-white"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+          )}
 
-        {dashboardError && (
-          <div className="rounded-xl border border-rose-400/20 bg-rose-400/[0.06] px-4 py-3 text-sm text-rose-200">
-            {dashboardError}
-          </div>
-        )}
+          {dashboardError && (
+            <div className="rounded-xl border border-rose-400/20 bg-rose-400/[0.06] px-4 py-3 text-sm text-rose-200">
+              {dashboardError}
+            </div>
+          )}
 
-        {dashboardLoading && !dashboardData && (
-          <div className="rounded-xl border border-white/[0.06] bg-[#0a1019]/80 px-4 py-3 text-sm text-slate-500">
-            Loading dashboard data...
-          </div>
-        )}
+          {dashboardLoading && !dashboardData && (
+            <div className="rounded-xl border border-white/[0.06] bg-[#0a1019]/80 px-4 py-3 text-sm text-slate-500">
+              Loading dashboard data...
+            </div>
+          )}
 
-                {/* ───────── portfolio overview ───────── */}
+          {/* ───────── portfolio overview ───────── */}
           <section
             aria-label="Portfolio overview"
             className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-6"
@@ -1802,7 +2443,7 @@ function Dashboard({ onNavigateAway = () => {}, initialSection = "Dashboard", le
                     <s.icon className="h-4 w-4" />
                   </span>
                   {s.change != null ? (
-                    <Delta value={s.change} />
+                    <LiveDelta value={s.change} volatility={0.04} />
                   ) : (
                     <span className="rounded-full bg-white/5 px-2 py-0.5 text-[11px] text-slate-400">
                       {s.badge}
@@ -1825,250 +2466,450 @@ function Dashboard({ onNavigateAway = () => {}, initialSection = "Dashboard", le
             ))}
           </section>
 
-        <div className="grid items-start gap-6 xl:grid-cols-3">
-          <div className="min-w-0 space-y-6 xl:col-span-2">
-        {/* ───────── quick actions ───────── */}
-        <section id="exchange" aria-label="Quick actions" className="grid grid-cols-2 gap-3">
-          {QUICK_ACTIONS.map((a) => (
-            <button key={a.key} type="button" data-anim="action" data-hover="lift" onClick={() => (a.key === "exchange" ? onNavigateAway("Exchange") : a.key === "deposit" ? onNavigateAway("Wallet") : setModal({ type: a.key }))}
-              className={`${CARD} flex items-center gap-3 p-4 text-left transition-colors hover:border-white/15`}>
-              <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl ring-1 ${ACCENT[a.tone]}`}><a.icon className="h-5 w-5" /></span>
-              <span className="min-w-0">
-                <span className="block text-sm font-semibold text-white">
-                  {a.label}
-                  {a.key === "exchange" && <>{" "}<span className="rounded-full bg-[#d4af6a]/15 px-1.5 py-0.5 align-middle text-[9px] font-semibold uppercase tracking-wide text-[#e2c17f]">Open</span></>}
-                </span>
-                <span className="hidden text-xs text-slate-500 sm:block">{a.key === "exchange" ? "Open exchange" : a.key === "deposit" ? "Open wallet to add funds" : a.hint}</span>
-              </span>
-            </button>
-          ))}
-        </section>
-
-          <section data-anim="chart" className={`${CARD} p-5 sm:p-6 xl:col-span-2`}>
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-              <div>
-                <div className="flex items-center gap-2">
-                  <h2 className="text-base font-semibold text-white">Portfolio growth</h2>
-                  {offset === 0 && dashboardData ? (
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-400/10 px-2 py-0.5 text-[10px] font-semibold tracking-wider text-emerald-300 ring-1 ring-inset ring-emerald-400/20">
-                      <span className="relative flex h-1.5 w-1.5">
-                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
-                        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
+          <div className="grid items-start gap-6 xl:grid-cols-3">
+            <div className="min-w-0 space-y-6 xl:col-span-2">
+              {/* ───────── quick actions ───────── */}
+              <section
+                id="exchange"
+                aria-label="Quick actions"
+                className="grid grid-cols-2 gap-3"
+              >
+                {QUICK_ACTIONS.map((a) => (
+                  <button
+                    key={a.key}
+                    type="button"
+                    data-anim="action"
+                    data-hover="lift"
+                    onClick={() =>
+                      a.key === "exchange"
+                        ? onNavigateAway("Exchange")
+                        : a.key === "deposit"
+                          ? onNavigateAway("Wallet")
+                          : setModal({ type: a.key })
+                    }
+                    className={`${CARD} flex items-center gap-3 p-4 text-left transition-colors hover:border-white/15`}
+                  >
+                    <span
+                      className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl ring-1 ${ACCENT[a.tone]}`}
+                    >
+                      <a.icon className="h-5 w-5" />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-sm font-semibold text-white">
+                        {a.label}
+                        {a.key === "exchange" && (
+                          <>
+                            {" "}
+                            <span className="rounded-full bg-[#d4af6a]/15 px-1.5 py-0.5 align-middle text-[9px] font-semibold uppercase tracking-wide text-[#e2c17f]">
+                              Open
+                            </span>
+                          </>
+                        )}
                       </span>
-                      LIVE
+                      <span className="hidden text-xs text-slate-500 sm:block">
+                        {a.key === "exchange"
+                          ? "Open exchange"
+                          : a.key === "deposit"
+                            ? "Open wallet to add funds"
+                            : a.hint}
+                      </span>
                     </span>
-                  ) : (
-                    <span className="rounded-full bg-white/5 px-2 py-0.5 text-[11px] text-slate-400">Past period</span>
-                  )}
-                </div>
-                <div className="mt-2 flex flex-wrap items-baseline gap-3">
-                  <p className="text-3xl font-semibold tabular-nums text-white">
-                    <AnimatedNumber value={last} format={fmt} />
-                    <span className="ml-1.5 text-sm font-medium text-slate-500">FAIX</span>
-                  </p>
-                  <Delta value={growth} />
-                </div>
-              </div>
+                  </button>
+                ))}
+              </section>
 
-             <div className="flex w-full min-w-0 flex-wrap items-center gap-2 lg:w-auto lg:flex-nowrap">
+              <section
+                data-anim="chart"
+                className={`${CARD} p-5 sm:p-6 xl:col-span-2`}
+              >
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-base font-semibold text-white">
+                        Portfolio growth
+                      </h2>
+                      {offset === 0 && dashboardData ? (
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-400/10 px-2 py-0.5 text-[10px] font-semibold tracking-wider text-emerald-300 ring-1 ring-inset ring-emerald-400/20">
+                          <span className="relative flex h-1.5 w-1.5">
+                            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
+                            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                          </span>
+                          LIVE
+                        </span>
+                      ) : (
+                        <span className="rounded-full bg-white/5 px-2 py-0.5 text-[11px] text-slate-400">
+                          Past period
+                        </span>
+                      )}
+                    </div>
+                    <div className="mt-2 flex flex-wrap items-baseline gap-3">
+                      <p className="text-3xl font-semibold tabular-nums text-white">
+                        <AnimatedNumber value={last} format={fmt} />
+                        <span className="ml-1.5 text-sm font-medium text-slate-500">
+                          FAIX
+                        </span>
+                      </p>
+                      <LiveDelta value={growth} volatility={0.06} />
+                    </div>
+                  </div>
 
-  <div className="flex min-w-0 max-w-full items-center rounded-xl border border-white/10 bg-white/[0.02]">
-    <button
-      type="button"
-      aria-label="Earlier period"
-      disabled={offset >= MAX_OFFSET}
-      onClick={() => setOffset((o) => o + 1)}
-      className="shrink-0 p-2.5 text-slate-400 transition-colors hover:text-white disabled:opacity-30"
-    >
-      <ChevronLeft className="h-4 w-4" />
-    </button>
+                  <div className="flex w-full min-w-0 flex-wrap items-center gap-2 lg:w-auto lg:flex-nowrap">
+                    <div className="flex min-w-0 max-w-full items-center rounded-xl border border-white/10 bg-white/[0.02]">
+                      <button
+                        type="button"
+                        aria-label="Earlier period"
+                        disabled={offset >= MAX_OFFSET}
+                        onClick={() => setOffset((o) => o + 1)}
+                        className="shrink-0 p-2.5 text-slate-400 transition-colors hover:text-white disabled:opacity-30"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </button>
 
-    <span className="min-w-0 flex-1 truncate px-2 text-center text-[11px] text-slate-300 sm:text-xs">
-      <CalendarDays className="mr-1 inline-block h-3.5 w-3.5 text-[#d4af6a]" />
-      {series.rangeText}
-    </span>
+                      <span className="min-w-0 flex-1 truncate px-2 text-center text-[11px] text-slate-300 sm:text-xs">
+                        <CalendarDays className="mr-1 inline-block h-3.5 w-3.5 text-[#d4af6a]" />
+                        {series.rangeText}
+                      </span>
 
-    <button
-      type="button"
-      aria-label="Later period"
-      disabled={offset === 0}
-      onClick={() => setOffset((o) => o - 1)}
-      className="shrink-0 p-2.5 text-slate-400 transition-colors hover:text-white disabled:opacity-30"
-    >
-      <ChevronRight className="h-4 w-4" />
-    </button>
-  </div>
+                      <button
+                        type="button"
+                        aria-label="Later period"
+                        disabled={offset === 0}
+                        onClick={() => setOffset((o) => o - 1)}
+                        className="shrink-0 p-2.5 text-slate-400 transition-colors hover:text-white disabled:opacity-30"
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </button>
+                    </div>
 
-  <div
-    role="group"
-    aria-label="Time filter"
-    className="flex shrink-0 rounded-xl border border-white/10 bg-white/[0.02] p-1"
-  >
-    {Object.entries(RANGES).map(([key, r]) => (
-      <button
-        key={key}
-        type="button"
-        aria-pressed={range === key}
-        onClick={() => {
-          setRange(key);
-          setOffset(0);
-        }}
-        className={`rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-colors sm:px-3 sm:text-xs ${
-          range === key
-            ? "bg-cyan-400/15 text-cyan-200"
-            : "text-slate-400 hover:text-white"
-        }`}
-      >
-        {r.label}
-      </button>
-    ))}
-  </div>
-
-</div>
-            </div>
-
-            <div className="mt-4 flex items-center gap-5 text-xs text-slate-500">
-              <span className="flex items-center gap-2"><span className="h-0.5 w-5 rounded bg-cyan-400" />Portfolio value</span>
-              <span className="flex items-center gap-2"><span className="w-5 border-t-2 border-dashed border-[#d4af6a]" />Baseline</span>
-            </div>
-
-            <div ref={chartWrap} className="mt-3 h-[280px] w-full sm:h-[340px] lg:h-[380px] [&_*]:outline-none">
-              <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart key={`${range}-${offset}`} data={series.data} margin={{ top: 10, right: 8, left: 0, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="pvFill" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={C.cyan} stopOpacity={0.26} />
-                      <stop offset="100%" stopColor={C.cyan} stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
-                  <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fill: "#64748b", fontSize: 11 }} minTickGap={24} dy={8} />
-                  <YAxis domain={[yMin, yMax]} width={52} tickLine={false} axisLine={false} tick={{ fill: "#64748b", fontSize: 11 }}
-                    tickFormatter={(v) => new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 }).format(v)} />
-                  <Tooltip content={<ChartTooltip />} cursor={{ stroke: "rgba(34,211,238,0.35)", strokeDasharray: "3 3" }} />
-                  <Line dataKey="baseline" type="linear" stroke={C.gold} strokeWidth={1.25} strokeDasharray="5 5" strokeOpacity={0.7} dot={false} activeDot={false} isAnimationActive={false} />
-                  <Area dataKey="value" type="monotone" stroke={C.cyan} strokeWidth={2.25} fill="url(#pvFill)"
-                    activeDot={{ r: 5, fill: "#05080d", stroke: C.cyan, strokeWidth: 2 }}
-                    isAnimationActive={animateChart} animationDuration={900} animationEasing="ease-out" />
-                </ComposedChart>
-              </ResponsiveContainer>
-            </div>
-
-      <div className="mt-4 grid grid-cols-1 gap-3 border-t border-white/[0.06] pt-4 sm:grid-cols-2 xl:grid-cols-4">
-  {kpis.map((k) => (
-    <div
-      key={k.label}
-      className="flex min-w-0 items-center justify-between gap-3 rounded-xl border border-white/[0.06] bg-[#0b121c] px-4 py-3 transition-all duration-200 hover:border-white/[0.12] hover:bg-[#0d1520]"
-    >
-      <div className="min-w-0">
-        <p className="truncate text-[10px] font-medium uppercase tracking-[0.08em] text-slate-500">
-          {k.label}
-        </p>
-
-        <div className="mt-1.5 flex min-w-0 items-baseline gap-1.5">
-          <span className="truncate text-lg font-semibold leading-none text-white">
-            {k.value}
-          </span>
-
-          {k.unit && (
-            <span className="shrink-0 text-[10px] text-slate-500">
-              {k.unit}
-            </span>
-          )}
-        </div>
-
-        <p className="mt-1.5 truncate text-[10px] text-slate-500">
-          {k.note}
-        </p>
-      </div>
-
-      <span
-        className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg ring-1 ${ACCENT[k.tone]}`}
-      >
-        <k.icon className="h-4 w-4" />
-      </span>
-    </div>
-  ))}
-</div>
-          </section>
-          </div>
-
-          <div className="space-y-6">
-            {/* asset allocation */}
-            <section id="portfolio" data-anim="section" className={`${CARD} p-5`}>
-              <SectionTitle icon={PieChartIcon} tone="gold" title="Asset allocation" subtitle="Current FAIX allocation" />
-              <div className="relative h-56 [&_*]:outline-none">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie data={alloc} dataKey="value" nameKey="name" innerRadius="68%" outerRadius="92%" paddingAngle={3} stroke="none"
-                      startAngle={90} endAngle={-270} animationDuration={900}
-                      onMouseEnter={(_, i) => setActiveSlice(i)} onMouseLeave={() => setActiveSlice(null)}>
-                      {alloc.map((a, i) => (
-                        <Cell key={a.name} fill={a.color} fillOpacity={activeSlice === null || activeSlice === i ? 1 : 0.3} style={{ transition: "fill-opacity .2s", cursor: "pointer" }} />
+                    <div
+                      role="group"
+                      aria-label="Time filter"
+                      className="flex shrink-0 rounded-xl border border-white/10 bg-white/[0.02] p-1"
+                    >
+                      {Object.entries(RANGES).map(([key, r]) => (
+                        <button
+                          key={key}
+                          type="button"
+                          aria-pressed={range === key}
+                          onClick={() => {
+                            setRange(key);
+                            setOffset(0);
+                          }}
+                          className={`rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-colors sm:px-3 sm:text-xs ${
+                            range === key
+                              ? "bg-cyan-400/15 text-cyan-200"
+                              : "text-slate-400 hover:text-white"
+                          }`}
+                        >
+                          {r.label}
+                        </button>
                       ))}
-                    </Pie>
-                  </PieChart>
-                </ResponsiveContainer>
-                <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
-                  {activeSlice === null ? (
-                    <>
-                      <p className="text-xs text-slate-500">Total portfolio</p>
-                      <p className="text-xl font-semibold tabular-nums text-white">{fmt(total)}</p>
-                      <p className="text-[11px] text-slate-500">FAIX</p>
-                    </>
-                  ) : (
-                    <>
-                      <p className="text-xs text-slate-400">{alloc[activeSlice].name}</p>
-                      <p className="text-xl font-semibold tabular-nums text-white">{pctOf(alloc[activeSlice].value, total).toFixed(1)}%</p>
-                      <p className="text-[11px] tabular-nums text-slate-500">{fmt(alloc[activeSlice].value)} FAIX</p>
-                    </>
-                  )}
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <ul className="mt-3 space-y-1">
-                {alloc.map((a, i) => (
-                  <li key={a.name} onMouseEnter={() => setActiveSlice(i)} onMouseLeave={() => setActiveSlice(null)}
-                    className={`flex cursor-default items-center justify-between rounded-lg px-2 py-1.5 text-sm transition-colors ${activeSlice === i ? "bg-white/[0.04]" : ""}`}>
-                    <span className="flex items-center gap-2.5 text-slate-300"><span className="h-2.5 w-2.5 rounded-full" style={{ background: a.color }} />{a.name}</span>
-                    <span className="tabular-nums text-slate-400">
-                      <span className="mr-3 text-xs text-slate-500">{fmt(a.value)}</span>
-                      <span className="font-medium text-white">{pctOf(a.value, total).toFixed(1)}%</span>
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </section>
 
-            {/* portfolio summary */}
-            <section id="wallet" data-anim="section" className={`${CARD} p-5`}>
-              <SectionTitle icon={Landmark} tone="cyan" title="Portfolio summary" right={<ViewAllButton label="Open wallet" onClick={() => onNavigateAway("Wallet")} />} />
-              <p className="text-xs text-slate-400">Current balance</p>
-              <p className="mt-1 text-3xl font-semibold tabular-nums text-white">
-                <AnimatedNumber value={total} format={fmt} />
-                <span className="ml-1.5 text-sm font-medium text-slate-500">FAIX</span>
-              </p>
-              <div className="mt-4 flex h-2 overflow-hidden rounded-full bg-white/5" aria-hidden>
-                <div className="bg-cyan-400/80 transition-[width] duration-700" style={{ width: `${pctOf(holdings, total)}%` }} />
-                <div className="flex-1 bg-[#d4af6a]/70" />
-              </div>
-              <div className="mt-2 flex justify-between text-[11px] text-slate-500">
-                <span>Invested {pctOf(holdings, total).toFixed(1)}%</span>
-                <span>Cash {pctOf(faix, total).toFixed(1)}%</span>
-              </div>
-              <ul className="mt-4 divide-y divide-white/5">
-                {summaryRows.map((r) => (
-                  <li key={r.label} className="flex items-center justify-between gap-3 py-3">
-                    <span className="flex items-center gap-3 text-sm text-slate-400">
-                      <span className={`grid h-8 w-8 place-items-center rounded-lg ring-1 ${ACCENT[r.tone]}`}><r.icon className="h-4 w-4" /></span>
-                      {r.label}
-                    </span>
-                    <span className={`text-right text-sm font-medium tabular-nums ${r.accent || "text-slate-100"}`}>{r.value}</span>
-                  </li>
-                ))}
-              </ul>
-            </section>
+                <div className="mt-4 flex items-center gap-5 text-xs text-slate-500">
+                  <span className="flex items-center gap-2">
+                    <span className="h-0.5 w-5 rounded bg-cyan-400" />
+                    Portfolio value
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <span className="w-5 border-t-2 border-dashed border-[#d4af6a]" />
+                    Baseline
+                  </span>
+                </div>
+
+                <div
+                  ref={chartWrap}
+                  className="mt-3 h-[280px] w-full sm:h-[340px] lg:h-[380px] [&_*]:outline-none"
+                >
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ComposedChart
+                      key={`${range}-${offset}`}
+                      data={liveChartData}
+                      margin={{ top: 10, right: 8, left: 0, bottom: 0 }}
+                    >
+                      <defs>
+                        <linearGradient id="pvFill" x1="0" y1="0" x2="0" y2="1">
+                          <stop
+                            offset="0%"
+                            stopColor={C.cyan}
+                            stopOpacity={0.26}
+                          />
+                          <stop
+                            offset="100%"
+                            stopColor={C.cyan}
+                            stopOpacity={0}
+                          />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid
+                        stroke="rgba(255,255,255,0.05)"
+                        vertical={false}
+                      />
+                      <XAxis
+                        dataKey="label"
+                        tickLine={false}
+                        axisLine={false}
+                        tick={{ fill: "#64748b", fontSize: 11 }}
+                        minTickGap={24}
+                        dy={8}
+                      />
+                      <YAxis
+                        domain={[yMin, yMax]}
+                        width={52}
+                        tickLine={false}
+                        axisLine={false}
+                        tick={{ fill: "#64748b", fontSize: 11 }}
+                        tickFormatter={(v) =>
+                          new Intl.NumberFormat("en-US", {
+                            notation: "compact",
+                            maximumFractionDigits: 1,
+                          }).format(v)
+                        }
+                      />
+                      <Tooltip
+                        content={<ChartTooltip />}
+                        cursor={{
+                          stroke: "rgba(34,211,238,0.35)",
+                          strokeDasharray: "3 3",
+                        }}
+                      />
+                      <Line
+                        dataKey="baseline"
+                        type="linear"
+                        stroke={C.gold}
+                        strokeWidth={1.25}
+                        strokeDasharray="5 5"
+                        strokeOpacity={0.7}
+                        dot={false}
+                        activeDot={false}
+                        isAnimationActive={false}
+                      />
+                      <Area
+                        dataKey="value"
+                        type="monotone"
+                        stroke={C.cyan}
+                        strokeWidth={2.25}
+                        fill="url(#pvFill)"
+                        activeDot={{
+                          r: 5,
+                          fill: "#05080d",
+                          stroke: C.cyan,
+                          strokeWidth: 2,
+                        }}
+                        isAnimationActive
+                        animationDuration={900}
+                        animationEasing="ease-in-out"
+                      />
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                </div>
+
+                <div className="mt-4 grid grid-cols-1 gap-3 border-t border-white/[0.06] pt-4 sm:grid-cols-2 xl:grid-cols-4">
+                  {kpis.map((k) => (
+                    <div
+                      key={k.label}
+                      className="flex min-w-0 items-center justify-between gap-3 rounded-xl border border-white/[0.06] bg-[#0b121c] px-4 py-3 transition-all duration-200 hover:border-white/[0.12] hover:bg-[#0d1520]"
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate text-[10px] font-medium uppercase tracking-[0.08em] text-slate-500">
+                          {k.label}
+                        </p>
+
+                        <div className="mt-1.5 flex min-w-0 items-baseline gap-1.5">
+                          <span className="truncate text-lg font-semibold leading-none text-white">
+                            {k.value}
+                          </span>
+
+                          {k.unit && (
+                            <span className="shrink-0 text-[10px] text-slate-500">
+                              {k.unit}
+                            </span>
+                          )}
+                        </div>
+
+                        <p className="mt-1.5 truncate text-[10px] text-slate-500">
+                          {k.note}
+                        </p>
+                      </div>
+
+                      <span
+                        className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg ring-1 ${ACCENT[k.tone]}`}
+                      >
+                        <k.icon className="h-4 w-4" />
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            </div>
+
+            <div className="space-y-6">
+              {/* asset allocation */}
+              <section
+                id="portfolio"
+                data-anim="section"
+                className={`${CARD} p-5`}
+              >
+                <SectionTitle
+                  icon={PieChartIcon}
+                  tone="gold"
+                  title="Asset allocation"
+                  subtitle="Current FAIX allocation"
+                />
+                <div className="relative h-56 [&_*]:outline-none">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={alloc}
+                        dataKey="value"
+                        nameKey="name"
+                        innerRadius="68%"
+                        outerRadius="92%"
+                        paddingAngle={3}
+                        stroke="none"
+                        startAngle={90}
+                        endAngle={-270}
+                        animationDuration={900}
+                        onMouseEnter={(_, i) => setActiveSlice(i)}
+                        onMouseLeave={() => setActiveSlice(null)}
+                      >
+                        {alloc.map((a, i) => (
+                          <Cell
+                            key={a.name}
+                            fill={a.color}
+                            fillOpacity={
+                              activeSlice === null || activeSlice === i
+                                ? 1
+                                : 0.3
+                            }
+                            style={{
+                              transition: "fill-opacity .2s",
+                              cursor: "pointer",
+                            }}
+                          />
+                        ))}
+                      </Pie>
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
+                    {activeSlice === null ? (
+                      <>
+                        <p className="text-xs text-slate-500">
+                          Total portfolio
+                        </p>
+                        <p className="text-xl font-semibold tabular-nums text-white">
+                          {fmt(total)}
+                        </p>
+                        <p className="text-[11px] text-slate-500">FAIX</p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-xs text-slate-400">
+                          {alloc[activeSlice].name}
+                        </p>
+                        <p className="text-xl font-semibold tabular-nums text-white">
+                          {pctOf(alloc[activeSlice].value, total).toFixed(1)}%
+                        </p>
+                        <p className="text-[11px] tabular-nums text-slate-500">
+                          {fmt(alloc[activeSlice].value)} FAIX
+                        </p>
+                      </>
+                    )}
+                  </div>
+                </div>
+                <ul className="mt-3 space-y-1">
+                  {alloc.map((a, i) => (
+                    <li
+                      key={a.name}
+                      onMouseEnter={() => setActiveSlice(i)}
+                      onMouseLeave={() => setActiveSlice(null)}
+                      className={`flex cursor-default items-center justify-between rounded-lg px-2 py-1.5 text-sm transition-colors ${activeSlice === i ? "bg-white/[0.04]" : ""}`}
+                    >
+                      <span className="flex items-center gap-2.5 text-slate-300">
+                        <span
+                          className="h-2.5 w-2.5 rounded-full"
+                          style={{ background: a.color }}
+                        />
+                        {a.name}
+                      </span>
+                      <span className="tabular-nums text-slate-400">
+                        <span className="mr-3 text-xs text-slate-500">
+                          {fmt(a.value)}
+                        </span>
+                        <span className="font-medium text-white">
+                          {pctOf(a.value, total).toFixed(1)}%
+                        </span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+
+              {/* portfolio summary */}
+              <section
+                id="wallet"
+                data-anim="section"
+                className={`${CARD} p-5`}
+              >
+                <SectionTitle
+                  icon={Landmark}
+                  tone="cyan"
+                  title="Portfolio summary"
+                  right={
+                    <ViewAllButton
+                      label="Open wallet"
+                      onClick={() => onNavigateAway("Wallet")}
+                    />
+                  }
+                />
+                <p className="text-xs text-slate-400">Current balance</p>
+                <p className="mt-1 text-3xl font-semibold tabular-nums text-white">
+                  <AnimatedNumber value={total} format={fmt} />
+                  <span className="ml-1.5 text-sm font-medium text-slate-500">
+                    FAIX
+                  </span>
+                </p>
+                <div
+                  className="mt-4 flex h-2 overflow-hidden rounded-full bg-white/5"
+                  aria-hidden
+                >
+                  <div
+                    className="bg-cyan-400/80 transition-[width] duration-700"
+                    style={{ width: `${pctOf(holdings, total)}%` }}
+                  />
+                  <div className="flex-1 bg-[#d4af6a]/70" />
+                </div>
+                <div className="mt-2 flex justify-between text-[11px] text-slate-500">
+                  <span>Invested {pctOf(holdings, total).toFixed(1)}%</span>
+                  <span>Cash {pctOf(faix, total).toFixed(1)}%</span>
+                </div>
+                <ul className="mt-4 divide-y divide-white/5">
+                  {summaryRows.map((r) => (
+                    <li
+                      key={r.label}
+                      className="flex items-center justify-between gap-3 py-3"
+                    >
+                      <span className="flex items-center gap-3 text-sm text-slate-400">
+                        <span
+                          className={`grid h-8 w-8 place-items-center rounded-lg ring-1 ${ACCENT[r.tone]}`}
+                        >
+                          <r.icon className="h-4 w-4" />
+                        </span>
+                        {r.label}
+                      </span>
+                      <span
+                        className={`text-right text-sm font-medium tabular-nums ${r.accent || "text-slate-100"}`}
+                      >
+                        {r.value}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            </div>
           </div>
-        </div>
         </div>
 
         {/* ───────── top performers ───────── */}
@@ -2084,15 +2925,18 @@ function Dashboard({ onNavigateAway = () => {}, initialSection = "Dashboard", le
             subtitle="Leading properties, investors and investments"
           />
 
-          <div className="grid gap-5 lg:grid-cols-2 2xl:grid-cols-3">
-
+          <div className="grid gap-5 lg:grid-cols-3 2xl:grid-cols-3">
             {/* TOP PROPERTIES */}
             <div data-anim="section" className={`${CARD} overflow-hidden`}>
               <div className="border-b border-white/[0.06] px-5 py-4">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-sm font-semibold text-white">Top 5 Properties</p>
-                    <p className="mt-1 text-[11px] text-slate-500">By property value</p>
+                    <p className="text-sm font-semibold text-white">
+                      Top 5 Properties
+                    </p>
+                    <p className="mt-1 text-[11px] text-slate-500">
+                      By property value
+                    </p>
                   </div>
                   <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl ring-1 bg-[#d4af6a]/10 text-[#e2c17f] ring-[#d4af6a]/25">
                     <Building2 className="h-4 w-4" />
@@ -2102,22 +2946,39 @@ function Dashboard({ onNavigateAway = () => {}, initialSection = "Dashboard", le
 
               <div className="divide-y divide-white/[0.05]">
                 {topProperties.map((p, i) => (
-                  <div key={p.id} className="flex items-center gap-3 px-5 py-3.5 transition-colors hover:bg-white/[0.03]">
+                  <div
+                    key={p.id}
+                    className="flex items-center gap-3 px-5 py-3.5 transition-colors hover:bg-white/[0.03]"
+                  >
                     <RankBadge rank={i + 1} />
 
                     <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-xl bg-[#0d1520]">
                       <Building2 className="absolute left-1/2 top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 text-[#d4af6a]/60" />
-                      {p.img && <Photo src={p.img} alt={p.name} className="absolute inset-0 h-full w-full object-cover" />}
+                      {p.img && (
+                        <Photo
+                          src={p.img}
+                          alt={p.name}
+                          className="absolute inset-0 h-full w-full object-cover"
+                        />
+                      )}
                     </div>
 
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-white">{p.name}</p>
-                      <p className="mt-0.5 truncate text-[10px] text-slate-500">{p.location}</p>
-                      <p className="mt-1 text-[10px] text-slate-600">{fmt0(p.sold)} tokens sold</p>
+                      <p className="truncate text-sm font-medium text-white">
+                        {p.name}
+                      </p>
+                      <p className="mt-0.5 truncate text-[10px] text-slate-500">
+                        {p.location}
+                      </p>
+                      <p className="mt-1 text-[10px] text-slate-600">
+                        {fmt0(p.sold)} tokens sold
+                      </p>
                     </div>
 
                     <div className="shrink-0 text-right">
-                      <p className="text-sm font-semibold tabular-nums text-white">{fmt(p.value)}</p>
+                      <p className="text-sm font-semibold tabular-nums text-white">
+                        {fmt(p.value)}
+                      </p>
                       <p className="mt-1 text-[10px] text-[#d4af6a]">FAIX</p>
                     </div>
                   </div>
@@ -2130,8 +2991,12 @@ function Dashboard({ onNavigateAway = () => {}, initialSection = "Dashboard", le
               <div className="border-b border-white/[0.06] px-5 py-4">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-sm font-semibold text-white">Top 5 Investors</p>
-                    <p className="mt-1 text-[11px] text-slate-500">By invested amount</p>
+                    <p className="text-sm font-semibold text-white">
+                      Top 5 Investors
+                    </p>
+                    <p className="mt-1 text-[11px] text-slate-500">
+                      By invested amount
+                    </p>
                   </div>
                   <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl ring-1 bg-cyan-400/10 text-cyan-300 ring-cyan-400/20">
                     <UsersIcon className="h-4 w-4" />
@@ -2141,28 +3006,43 @@ function Dashboard({ onNavigateAway = () => {}, initialSection = "Dashboard", le
 
               <div className="divide-y divide-white/[0.05]">
                 {topUsers.map((u, i) => (
-                  <div key={u.userId} className="flex items-center gap-3 px-5 py-3.5 transition-colors hover:bg-white/[0.03]">
+                  <div
+                    key={u.userId}
+                    className="flex items-center gap-3 px-5 py-3.5 transition-colors hover:bg-white/[0.03]"
+                  >
                     <RankBadge rank={i + 1} />
 
-                    <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-full text-xs font-semibold ring-1 ${AVATAR_TONES[i % AVATAR_TONES.length]}`}>
+                    <span
+                      className={`grid h-10 w-10 shrink-0 place-items-center rounded-full text-xs font-semibold ring-1 ${AVATAR_TONES[i % AVATAR_TONES.length]}`}
+                    >
                       {u.initials || initials(u.name)}
                     </span>
 
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-white">{u.name}</p>
-                      <p className="mt-0.5 truncate text-[10px] text-slate-500">User ID: {u.userId}</p>
+                      <p className="truncate text-sm font-medium text-white">
+                        {u.name}
+                      </p>
+                      <p className="mt-0.5 truncate text-[10px] text-slate-500">
+                        User ID: {u.userId}
+                      </p>
                       <p className="mt-1 truncate text-[10px] text-slate-600">
-                        {u.propertiesCount} properties · {u.fundsJoinedCount} funds
+                        {u.propertiesCount} properties · {u.fundsJoinedCount}{" "}
+                        funds
                       </p>
                     </div>
 
                     <div className="shrink-0 text-right">
                       <p className="text-sm font-semibold tabular-nums text-white">
                         {fmt(u.invested)}
-                        <span className="ml-1 text-[10px] font-normal text-slate-500">FAIX</span>
+                        <span className="ml-1 text-[10px] font-normal text-slate-500">
+                          FAIX
+                        </span>
                       </p>
-                      <p className={`mt-1 text-[10px] tabular-nums ${u.returns >= 0 ? "text-emerald-300" : "text-rose-300"}`}>
-                        {u.returns >= 0 ? "+" : ""}{u.returns.toFixed(2)}%
+                      <p
+                        className={`mt-1 text-[10px] tabular-nums ${u.returns >= 0 ? "text-emerald-300" : "text-rose-300"}`}
+                      >
+                        {u.returns >= 0 ? "+" : ""}
+                        {u.returns.toFixed(2)}%
                       </p>
                     </div>
                   </div>
@@ -2175,8 +3055,12 @@ function Dashboard({ onNavigateAway = () => {}, initialSection = "Dashboard", le
               <div className="border-b border-white/[0.06] px-5 py-4">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-sm font-semibold text-white">Top 5 Investments</p>
-                    <p className="mt-1 text-[11px] text-slate-500">Your largest positions</p>
+                    <p className="text-sm font-semibold text-white">
+                      Top 5 Investments
+                    </p>
+                    <p className="mt-1 text-[11px] text-slate-500">
+                      Your largest positions
+                    </p>
                   </div>
                   <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl ring-1 bg-indigo-400/10 text-indigo-300 ring-indigo-400/20">
                     <TrendingUp className="h-4 w-4" />
@@ -2187,58 +3071,93 @@ function Dashboard({ onNavigateAway = () => {}, initialSection = "Dashboard", le
               {topInvestments.length === 0 ? (
                 <div className="px-5 py-12 text-center">
                   <TrendingUp className="mx-auto h-7 w-7 text-slate-600" />
-                  <p className="mt-3 text-sm text-slate-500">No investments yet</p>
+                  <p className="mt-3 text-sm text-slate-500">
+                    No investments yet
+                  </p>
                 </div>
               ) : (
                 <div className="divide-y divide-white/[0.05]">
                   {topInvestments.map((inv, i) => (
-                    <div key={inv.id} className="flex items-center gap-3 px-5 py-3.5 transition-colors hover:bg-white/[0.03]">
+                    <div
+                      key={inv.id}
+                      className="flex items-center gap-3 px-5 py-3.5 transition-colors hover:bg-white/[0.03]"
+                    >
                       <RankBadge rank={i + 1} />
 
-                      <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ring-1 ${inv.kind === "Fund" ? ACCENT.cyan : ACCENT.gold}`}>
+                      <span
+                        className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ring-1 ${inv.kind === "Fund" ? ACCENT.cyan : ACCENT.gold}`}
+                      >
                         <inv.icon className="h-4 w-4" />
                       </span>
 
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-white">{inv.name}</p>
-                        <p className="mt-0.5 truncate text-[10px] text-slate-500">{inv.kind} · {inv.sub}</p>
-                        <p className="mt-1 text-[10px] text-slate-600">Cost {fmt(inv.cost)} FAIX</p>
+                        <p className="truncate text-sm font-medium text-white">
+                          {inv.name}
+                        </p>
+                        <p className="mt-0.5 truncate text-[10px] text-slate-500">
+                          {inv.kind} · {inv.sub}
+                        </p>
+                        <p className="mt-1 text-[10px] text-slate-600">
+                          Cost {fmt(inv.cost)} FAIX
+                        </p>
                       </div>
 
                       <div className="shrink-0 text-right">
-                        <p className="text-sm font-semibold tabular-nums text-white">{fmt(inv.value)}</p>
-                        <p className="mt-1 text-[10px] tabular-nums text-slate-500">{signedPct(inv.gain)}</p>
+                        <p className="text-sm font-semibold tabular-nums text-white">
+                          {fmt(inv.value)}
+                        </p>
+                        <p className="mt-1 text-[10px] tabular-nums text-slate-500">
+                          {signedPct(inv.gain)}
+                        </p>
                       </div>
                     </div>
                   ))}
                 </div>
               )}
             </div>
-
           </div>
         </section>
 
         {/* ───────── fund investments (scrollable) ───────── */}
-        <section id="investments" data-anim="section" className="mx-4 sm:mx-6 my-6 lg:mx-8 my-8">
-          <SectionTitle icon={Layers} tone="cyan" title="Fund investments" subtitle="Units are issued at the live NAV. Swipe or drag to see more."
+        <section
+          id="investments"
+          data-anim="section"
+          className="mx-4 sm:mx-6 my-6 lg:mx-8 my-8"
+        >
+          <SectionTitle
+            icon={Layers}
+            tone="cyan"
+            title="Fund investments"
+            subtitle="Units are issued at the live NAV. Swipe or drag to see more."
             right={
               <div className="flex items-center gap-3">
-                <span className="hidden items-center gap-1.5 rounded-full bg-white/[0.04] px-2.5 py-1 text-xs text-slate-400 md:inline-flex"><Activity className="h-3 w-3 text-emerald-300" />Live NAV from API</span>
+                <span className="hidden items-center gap-1.5 rounded-full bg-white/[0.04] px-2.5 py-1 text-xs text-slate-400 md:inline-flex">
+                  <Activity className="h-3 w-3 text-emerald-300" />
+                  Live NAV from API
+                </span>
                 <ViewAllButton onClick={() => onNavigateAway("Investments")} />
                 <CarouselArrows c={fundsCar} label="funds" />
               </div>
-            } />
-          <div ref={fundsCar.ref} {...fundsCar.handlers} className={`${CAROUSEL} mt-1`}>
-        {funds.length === 0 ? (
-          <div className="px-2 py-10 text-sm text-slate-500">No active funds are available right now.</div>
-        ) : funds.map((f) => {
-  const pos = fundPos[f.id];
-  const currentNav = navs[f.id] || f.nav;
+            }
+          />
+          <div
+            ref={fundsCar.ref}
+            {...fundsCar.handlers}
+            className={`${CAROUSEL} mt-1`}
+          >
+            {funds.length === 0 ? (
+              <div className="px-2 py-10 text-sm text-slate-500">
+                No active funds are available right now.
+              </div>
+            ) : (
+              funds.map((f) => {
+                const pos = fundPos[f.id];
+                const currentNav = navs[f.id] || f.nav;
 
-  return (
-    <article
-      key={f.id}
-      className="
+                return (
+                  <article
+                    key={f.id}
+                    className="
         group relative w-[245px] shrink-0 overflow-hidden
         rounded-2xl border border-white/[0.07]
         bg-[#091118]
@@ -2249,26 +3168,27 @@ function Dashboard({ onNavigateAway = () => {}, initialSection = "Dashboard", le
         sm:w-[260px]
         lg:w-[275px]
       "
-    >
-
-      {/* IMAGE */}
-      <div className="relative h-[105px] overflow-hidden">
-        {f.img && <img
-          src={f.img}
-          alt={f.name}
-          className="
+                  >
+                    {/* IMAGE */}
+                    <div className="relative h-[105px] overflow-hidden">
+                      {f.img && (
+                        <img
+                          src={f.img}
+                          alt={f.name}
+                          className="
             h-full w-full object-cover
             opacity-70
             transition duration-500
             group-hover:scale-110 group-hover:opacity-85
           "
-        />}
+                        />
+                      )}
 
-        <div className="absolute inset-0 bg-gradient-to-t from-[#091118] via-[#091118]/30 to-black/10" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#091118] via-[#091118]/30 to-black/10" />
 
-        {/* Status */}
-        <span
-          className={`
+                      {/* Status */}
+                      <span
+                        className={`
             absolute right-3 top-3
             rounded-full px-2 py-1
             text-[9px] font-semibold
@@ -2276,106 +3196,105 @@ function Dashboard({ onNavigateAway = () => {}, initialSection = "Dashboard", le
             ring-1 ring-inset
             ${f.status === "Open" ? ACCENT.emerald : ACCENT.gold}
           `}
-        >
-          {f.status}
-        </span>
+                      >
+                        {f.status}
+                      </span>
 
-        {/* Icon */}
-        <div className="
+                      {/* Icon */}
+                      <div
+                        className="
           absolute bottom-3 left-3
           grid h-9 w-9 place-items-center
           rounded-xl
           border border-[#d4af6a]/25
           bg-[#071017]/80
           backdrop-blur-md
-        ">
-          <f.icon className="h-4 w-4 text-[#d4af6a]" />
-        </div>
-      </div>
+        "
+                      >
+                        <f.icon className="h-4 w-4 text-[#d4af6a]" />
+                      </div>
+                    </div>
 
-      {/* CONTENT */}
-      <div className="p-4">
+                    {/* CONTENT */}
+                    <div className="p-4">
+                      <div className="min-w-0">
+                        <h3 className="truncate text-[14px] font-semibold text-white">
+                          {f.name}
+                        </h3>
 
-        <div className="min-w-0">
-          <h3 className="truncate text-[14px] font-semibold text-white">
-            {f.name}
-          </h3>
+                        <p className="mt-0.5 truncate text-[10px] text-slate-500">
+                          {f.category}
+                        </p>
+                      </div>
 
-          <p className="mt-0.5 truncate text-[10px] text-slate-500">
-            {f.category}
-          </p>
-        </div>
-
-        {/* NAV */}
-        <div className="
+                      {/* NAV */}
+                      <div
+                        className="
           mt-3 flex items-end justify-between
           rounded-xl border border-white/[0.05]
           bg-white/[0.02] p-3
-        ">
-          <div>
-            <p className="text-[9px] uppercase tracking-wider text-slate-600">
-              NAV
-            </p>
+        "
+                      >
+                        <div>
+                          <p className="text-[9px] uppercase tracking-wider text-slate-600">
+                            NAV
+                          </p>
 
-            <p className="mt-1 text-lg font-semibold tabular-nums text-white">
-              {fmt(currentNav, 4)}
-            </p>
-          </div>
+                          <p className="mt-1 text-lg font-semibold tabular-nums text-white">
+                            {fmt(currentNav, 4)}
+                          </p>
+                        </div>
 
-          <div className="text-right">
-            <Delta value={f.growth} />
-            <p className="mt-1 text-[9px] text-slate-600">
-              1Y growth
-            </p>
-          </div>
-        </div>
+                        <div className="text-right">
+                          <LiveDelta value={f.growth} volatility={0.03} />
+                          <p className="mt-1 text-[9px] text-slate-600">
+                            1Y growth
+                          </p>
+                        </div>
+                      </div>
 
-        {/* DETAILS */}
-        <div className="mt-3 flex items-center justify-between text-[10px]">
+                      {/* DETAILS */}
+                      <div className="mt-3 flex items-center justify-between text-[10px]">
+                        <div>
+                          <span className="text-slate-600">Your units</span>
 
-          <div>
-            <span className="text-slate-600">
-              Your units
-            </span>
+                          <p className="mt-0.5 font-medium text-slate-200">
+                            {pos ? fmt(pos.units) : "None"}
+                          </p>
+                        </div>
 
-            <p className="mt-0.5 font-medium text-slate-200">
-              {pos ? fmt(pos.units) : "None"}
-            </p>
-          </div>
+                        <div className="text-right">
+                          <span className="text-slate-600">Sold tokens</span>
+                          <p className="mt-0.5 font-medium text-[#e2c17f]">
+                            {fmt(f.soldFaixToken)}
+                          </p>
+                          <span className="mt-1 block text-slate-600">
+                            Status
+                          </span>
 
-          <div className="text-right">
-            <span className="text-slate-600">
-              Sold tokens
-            </span>
-            <p className="mt-0.5 font-medium text-[#e2c17f]">{fmt(f.soldFaixToken)}</p>
-            <span className="mt-1 block text-slate-600">
-              Status
-            </span>
+                          <p className="mt-0.5 flex items-center justify-end gap-1.5 text-slate-200">
+                            <span
+                              className={`h-1.5 w-1.5 rounded-full ${
+                                f.status === "Open"
+                                  ? "bg-emerald-400"
+                                  : "bg-amber-300"
+                              }`}
+                            />
+                            {f.status}
+                          </p>
+                        </div>
+                      </div>
 
-            <p className="mt-0.5 flex items-center justify-end gap-1.5 text-slate-200">
-              <span
-                className={`h-1.5 w-1.5 rounded-full ${
-                  f.status === "Open"
-                    ? "bg-emerald-400"
-                    : "bg-amber-300"
-                }`}
-              />
-              {f.status}
-            </p>
-          </div>
-
-        </div>
-
-        {/* INVEST */}
-        <button
-          type="button"
-          onClick={() =>
-            setModal({
-              type: "invest",
-              id: f.id,
-            })
-          }
-          className="
+                      {/* INVEST */}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setModal({
+                            type: "invest",
+                            id: f.id,
+                          })
+                        }
+                        className="
             mt-3 flex w-full items-center
             justify-center gap-2
             rounded-xl
@@ -2388,55 +3307,136 @@ function Dashboard({ onNavigateAway = () => {}, initialSection = "Dashboard", le
             hover:border-cyan-300/40
             hover:bg-cyan-400/[0.12]
           "
-        >
-          <TrendingUp className="h-3.5 w-3.5" />
-          Invest
-        </button>
-
-      </div>
-    </article>
-  );
-})}
+                      >
+                        <TrendingUp className="h-3.5 w-3.5" />
+                        Invest
+                      </button>
+                    </div>
+                  </article>
+                );
+              })
+            )}
           </div>
         </section>
 
         {/* ───────── property investment (scrollable) ───────── */}
-        <section id="properties" data-anim="section" className="mx-4 sm:mx-6 lg:mx-8">
-          <SectionTitle icon={Building2} tone="gold" title="Property investment" subtitle="Buy tokens that represent a share of each property. Swipe or drag to see more."
+        <section
+          id="properties"
+          data-anim="section"
+          className="mx-4 sm:mx-6 lg:mx-8"
+        >
+          <SectionTitle
+            icon={Building2}
+            tone="gold"
+            title="Property investment"
+            subtitle="Buy tokens that represent a share of each property. Swipe or drag to see more."
             right={
               <div className="flex items-center gap-3">
-                <ViewAllButton tone="gold" onClick={() => onNavigateAway("Properties")} />
+                <ViewAllButton
+                  tone="gold"
+                  onClick={() => onNavigateAway("Properties")}
+                />
                 <CarouselArrows c={propsCar} label="properties" />
               </div>
-            } />
-          <div ref={propsCar.ref} {...propsCar.handlers} className={`${CAROUSEL} mt-1`}>
+            }
+          />
+          <div
+            ref={propsCar.ref}
+            {...propsCar.handlers}
+            className={`${CAROUSEL} mt-1`}
+          >
             {properties.map((p) => {
               const held = propPos[p.id]?.tokens || 0;
-              const sold = Number.isFinite(Number(p.soldPercent)) ? Number(p.soldPercent) : (p.total > 0 ? ((p.total - p.available) / p.total) * 100 : 0);
+              const sold = Number.isFinite(Number(p.soldPercent))
+                ? Number(p.soldPercent)
+                : p.total > 0
+                  ? ((p.total - p.available) / p.total) * 100
+                  : 0;
               return (
-                <article key={p.id} data-hover="lift" className={`${CARD} group flex w-[280px] shrink-0 snap-start flex-col overflow-hidden transition-colors hover:border-[#d4af6a]/25 sm:w-[310px]`}>
+                <article
+                  key={p.id}
+                  data-hover="lift"
+                  className={`${CARD} group flex w-[280px] shrink-0 snap-start flex-col overflow-hidden transition-colors hover:border-[#d4af6a]/25 sm:w-[310px]`}
+                >
                   <div className="relative h-40 overflow-hidden bg-[#0d1520]">
-                    <Building2 className="absolute left-1/2 top-1/2 h-10 w-10 -translate-x-1/2 -translate-y-1/2 text-[#d4af6a]/60" strokeWidth={1.25} />
-                    {p.img && <Photo src={p.img} alt={p.name} className="absolute inset-0 h-full w-full object-cover group-hover:scale-105" />}
+                    <Building2
+                      className="absolute left-1/2 top-1/2 h-10 w-10 -translate-x-1/2 -translate-y-1/2 text-[#d4af6a]/60"
+                      strokeWidth={1.25}
+                    />
+                    {p.img && (
+                      <Photo
+                        src={p.img}
+                        alt={p.name}
+                        className="absolute inset-0 h-full w-full object-cover group-hover:scale-105"
+                      />
+                    )}
                     <div className="absolute inset-0 bg-gradient-to-t from-[#0a1019] via-[#0a1019]/10 to-black/40" />
-                    <span className="mt-dark-zone absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-black/45 px-2.5 py-1 text-[11px] text-slate-100 backdrop-blur"><MapPin className="h-3 w-3" />{p.location}</span>
-                    <span className={`absolute right-3 top-3 rounded-full px-2 py-1 text-[11px] font-medium ring-1 ring-inset backdrop-blur ${p.status === "Available" ? ACCENT.emerald : ACCENT.gold}`}>{p.status}</span>
-                    {held > 0 && <span className="absolute bottom-3 left-3 rounded-full bg-[#d4af6a]/20 px-2.5 py-1 text-[11px] font-medium text-[#f0d69a] ring-1 ring-inset ring-[#d4af6a]/30 backdrop-blur">You own {fmt0(held)} tokens</span>}
+                    <span className="mt-dark-zone absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-black/45 px-2.5 py-1 text-[11px] text-slate-100 backdrop-blur">
+                      <MapPin className="h-3 w-3" />
+                      {p.location}
+                    </span>
+                    <span
+                      className={`absolute right-3 top-3 rounded-full px-2 py-1 text-[11px] font-medium ring-1 ring-inset backdrop-blur ${p.status === "Available" ? ACCENT.emerald : ACCENT.gold}`}
+                    >
+                      {p.status}
+                    </span>
+                    {held > 0 && (
+                      <span className="absolute bottom-3 left-3 rounded-full bg-[#d4af6a]/20 px-2.5 py-1 text-[11px] font-medium text-[#f0d69a] ring-1 ring-inset ring-[#d4af6a]/30 backdrop-blur">
+                        You own {fmt0(held)} tokens
+                      </span>
+                    )}
                   </div>
                   <div className="flex flex-1 flex-col p-5">
-                    <h3 className="text-[15px] font-semibold text-white">{p.name}</h3>
+                    <h3 className="text-[15px] font-semibold text-white">
+                      {p.name}
+                    </h3>
                     <dl className="mt-4 grid grid-cols-2 gap-x-3 gap-y-3 text-xs">
-                      <div><dt className="text-slate-500">Property value</dt><dd className="mt-0.5 text-sm font-medium tabular-nums text-white">{fmt(p.value)} FAIX</dd></div>
-                      <div><dt className="text-slate-500">FAIX token value</dt><dd className="mt-0.5 text-sm font-medium tabular-nums text-white">{fmt(p.tokenPrice)} FAIX</dd></div>
-                      <div><dt className="text-slate-500">Available tokens</dt><dd className="mt-0.5 text-sm font-medium tabular-nums text-white">{fmt0(p.available)}</dd></div>
-                      <div><dt className="text-slate-500">Your tokens</dt><dd className="mt-0.5 text-sm font-medium tabular-nums text-[#e2c17f]">{held ? fmt0(held) : "None yet"}</dd></div>
+                      <div>
+                        <dt className="text-slate-500">Property value</dt>
+                        <dd className="mt-0.5 text-sm font-medium tabular-nums text-white">
+                          {fmt(p.value)} FAIX
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-slate-500">FAIX token value</dt>
+                        <dd className="mt-0.5 text-sm font-medium tabular-nums text-white">
+                          {fmt(p.tokenPrice)} FAIX
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-slate-500">Available tokens</dt>
+                        <dd className="mt-0.5 text-sm font-medium tabular-nums text-white">
+                          {fmt0(p.available)}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-slate-500">Your tokens</dt>
+                        <dd className="mt-0.5 text-sm font-medium tabular-nums text-[#e2c17f]">
+                          {held ? fmt0(held) : "None yet"}
+                        </dd>
+                      </div>
                     </dl>
                     <div className="mt-4">
-                      <div className="mb-1.5 flex justify-between text-[11px] text-slate-500"><span>{fmt0(p.sold)} tokens sold</span><span className="tabular-nums">{sold.toFixed(1)}%</span></div>
-                      <div className="h-1.5 rounded-full bg-white/5"><div className="h-full rounded-full bg-[#d4af6a]/80 transition-[width] duration-700" style={{ width: `${sold}%` }} /></div>
+                      <div className="mb-1.5 flex justify-between text-[11px] text-slate-500">
+                        <span>{fmt0(p.sold)} tokens sold</span>
+                        <span className="tabular-nums">{sold.toFixed(1)}%</span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-white/5">
+                        <div
+                          className="h-full rounded-full bg-[#d4af6a]/80 transition-[width] duration-700"
+                          style={{ width: `${sold}%` }}
+                        />
+                      </div>
                     </div>
-                    <button type="button" data-hover="btn" disabled={p.available === 0} onClick={() => setModal({ type: "property", id: p.id })} className={`${BTN.goldSoft} mt-5`}>
-                      <Building2 className="h-4 w-4" /> {p.available === 0 ? "Sold out" : "Buy tokens"}
+                    <button
+                      type="button"
+                      data-hover="btn"
+                      disabled={p.available === 0}
+                      onClick={() => setModal({ type: "property", id: p.id })}
+                      className={`${BTN.goldSoft} mt-5`}
+                    >
+                      <Building2 className="h-4 w-4" />{" "}
+                      {p.available === 0 ? "Sold out" : "Buy tokens"}
                     </button>
                   </div>
                 </article>
@@ -2446,36 +3446,83 @@ function Dashboard({ onNavigateAway = () => {}, initialSection = "Dashboard", le
         </section>
 
         {/* ───────── recent transactions ───────── */}
-        <section id="transactions" data-anim="section" className={`${CARD} mx-4 mb-8 overflow-hidden sm:mx-6 lg:mx-8`}>
+        <section
+          id="transactions"
+          data-anim="section"
+          className={`${CARD} mx-4 mb-8 overflow-hidden sm:mx-6 lg:mx-8`}
+        >
           <div className="p-6 pb-3">
-            <SectionTitle icon={Clock} tone="violet" title="Recent transactions"
-              subtitle={q ? `${visibleTxs.length} results for "${query.trim()}"` : "Your latest activity"}
-              right={<ViewAllButton onClick={() => onNavigateAway("Transactions")} />} />
+            <SectionTitle
+              icon={Clock}
+              tone="violet"
+              title="Recent transactions"
+              subtitle={
+                q
+                  ? `${visibleTxs.length} results for "${query.trim()}"`
+                  : "Your latest activity"
+              }
+              right={
+                <ViewAllButton onClick={() => onNavigateAway("Transactions")} />
+              }
+            />
           </div>
           <div className="hidden grid-cols-[2.2fr_1fr_1fr_1.3fr_1fr] gap-5 border-y border-white/5 px-6 py-3 text-xs text-slate-500 md:grid">
-            <span>Asset</span><span>Type</span><span>Amount</span><span>Date</span><span>Status</span>
+            <span>Asset</span>
+            <span>Type</span>
+            <span>Amount</span>
+            <span>Date</span>
+            <span>Status</span>
           </div>
           <ul>
             {visibleTxs.map((t) => {
-              const { icon: Icon, tone } = TX_META[t.type] || TX_META.Investment;
+              const { icon: Icon, tone } =
+                TX_META[t.type] || TX_META.Investment;
               const pending = t.status === "Pending";
               return (
-                <li key={t.id} className="grid grid-cols-[1fr_auto] items-center gap-x-5 gap-y-2 border-b border-white/5 px-6 py-4 last:border-0 md:grid-cols-[2.2fr_1fr_1fr_1.3fr_1fr]">
+                <li
+                  key={t.id}
+                  className="grid grid-cols-[1fr_auto] items-center gap-x-5 gap-y-2 border-b border-white/5 px-6 py-4 last:border-0 md:grid-cols-[2.2fr_1fr_1fr_1.3fr_1fr]"
+                >
                   <div className="flex min-w-0 items-center gap-3 md:order-1">
-                    <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg ring-1 ${ACCENT[tone]}`}><Icon className="h-4 w-4" /></span>
+                    <span
+                      className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg ring-1 ${ACCENT[tone]}`}
+                    >
+                      <Icon className="h-4 w-4" />
+                    </span>
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-white">{t.asset}</p>
-                      <p className="text-xs text-slate-500 md:hidden">{t.type}, {fmtDate(t.date)}</p>
+                      <p className="truncate text-sm font-medium text-white">
+                        {t.asset}
+                      </p>
+                      <p className="text-xs text-slate-500 md:hidden">
+                        {t.type}, {fmtDate(t.date)}
+                      </p>
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-1 md:contents">
-                    <span className="hidden text-sm text-slate-300 md:order-2 md:block">{t.type}</span>
-                    <span className={`text-sm font-medium tabular-nums md:order-3 ${t.amount > 0 ? "text-emerald-300" : "text-slate-100"}`}>
-                      {t.amount > 0 ? "+" : "−"}{fmt(Math.abs(t.amount))} <span className="text-[11px] font-normal text-slate-500">FAIX</span>
+                    <span className="hidden text-sm text-slate-300 md:order-2 md:block">
+                      {t.type}
                     </span>
-                    <span className="hidden text-xs text-slate-400 md:order-4 md:block">{fmtDate(t.date)}</span>
-                    <span className={`inline-flex w-fit items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset md:order-5 ${pending ? ACCENT.gold : ACCENT.emerald}`}>
-                      {pending ? <Clock className="h-3 w-3" /> : <Check className="h-3 w-3" />}{t.status}
+                    <span
+                      className={`text-sm font-medium tabular-nums md:order-3 ${t.amount > 0 ? "text-emerald-300" : "text-slate-100"}`}
+                    >
+                      {t.amount > 0 ? "+" : "−"}
+                      {fmt(Math.abs(t.amount))}{" "}
+                      <span className="text-[11px] font-normal text-slate-500">
+                        FAIX
+                      </span>
+                    </span>
+                    <span className="hidden text-xs text-slate-400 md:order-4 md:block">
+                      {fmtDate(t.date)}
+                    </span>
+                    <span
+                      className={`inline-flex w-fit items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset md:order-5 ${pending ? ACCENT.gold : ACCENT.emerald}`}
+                    >
+                      {pending ? (
+                        <Clock className="h-3 w-3" />
+                      ) : (
+                        <Check className="h-3 w-3" />
+                      )}
+                      {t.status}
                     </span>
                   </div>
                 </li>
@@ -2483,51 +3530,74 @@ function Dashboard({ onNavigateAway = () => {}, initialSection = "Dashboard", le
             })}
           </ul>
           {visibleTxs.length === 0 && (
-            <p className="px-5 py-10 text-center text-sm text-slate-500">No transactions match your search. Try an asset name like "Growth" or a type like "Deposit".</p>
+            <p className="px-5 py-10 text-center text-sm text-slate-500">
+              No transactions match your search. Try an asset name like "Growth"
+              or a type like "Deposit".
+            </p>
           )}
         </section>
       </div>
 
-      {modal && <ActionModal key={`${modal.type}-${modal.id || ""}`} modal={modal} ctx={ctx} onClose={closeModal} />}
+      {modal && (
+        <ActionModal
+          key={`${modal.type}-${modal.id || ""}`}
+          modal={modal}
+          ctx={ctx}
+          onClose={closeModal}
+        />
+      )}
       {toast && <Toast key={toast.id} message={toast.message} />}
     </>
- );
+  );
 }
 
 /**
  * Client-only gate: the dashboard depends on the current time / timezone (greeting, chart labels, tx dates),
  * so it renders after mount. This avoids hydration mismatches in Next.js and is harmless in plain React.
  */
-export default function UserAdmin({ onNavigateAway = () => {}, initialSection = "Dashboard" }) {
+export default function UserAdmin({
+  onNavigateAway = () => {},
+  initialSection = "Dashboard",
+}) {
   const lenisRef = useRef(null);
 
-    useEffect(() => {
-  const lenis = new Lenis({
-    duration: 1.1,
-    smoothWheel: true,
-    wheelMultiplier: 0.9,
-    touchMultiplier: 1.2,
-    autoRaf: false,
-  });
+  useEffect(() => {
+    const lenis = new Lenis({
+      duration: 1.1,
+      smoothWheel: true,
+      wheelMultiplier: 0.9,
+      touchMultiplier: 1.2,
+      autoRaf: false,
+    });
 
-  lenisRef.current = lenis;
+    lenisRef.current = lenis;
 
-  let rafId;
+    let rafId;
 
-  const raf = (time) => {
-    lenis.raf(time);
+    const raf = (time) => {
+      lenis.raf(time);
+      rafId = requestAnimationFrame(raf);
+    };
+
     rafId = requestAnimationFrame(raf);
-  };
 
-  rafId = requestAnimationFrame(raf);
-
-  return () => {
-    cancelAnimationFrame(rafId);
-    lenis.destroy();
-    lenisRef.current = null;
-  };
-}, []);
+    return () => {
+      cancelAnimationFrame(rafId);
+      lenis.destroy();
+      lenisRef.current = null;
+    };
+  }, []);
   const [mounted, setMounted] = useState(false);
-  useEffect(() => { setMounted(true); }, []);
-  return mounted ? <Dashboard onNavigateAway={onNavigateAway} initialSection={initialSection} lenisRef={lenisRef} /> : <div className="min-h-screen bg-[#05080d]" />;
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  return mounted ? (
+    <Dashboard
+      onNavigateAway={onNavigateAway}
+      initialSection={initialSection}
+      lenisRef={lenisRef}
+    />
+  ) : (
+    <div className="min-h-screen bg-[#05080d]" />
+  );
 }

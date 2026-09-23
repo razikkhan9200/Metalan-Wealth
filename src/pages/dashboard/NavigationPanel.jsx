@@ -106,14 +106,14 @@ const ACCOUNT_NAV = [
     icon: Bell,
     badge: 0,
   },
-  {
-    label: "Settings",
-    icon: Settings,
-  },
-  {
-    label: "Help & Support",
-    icon: CircleHelp,
-  },
+  // {
+  //   label: "Settings",
+  //   icon: Settings,
+  // },
+  // {
+  //   label: "Help & Support",
+  //   icon: CircleHelp,
+  // },
 ];
 
 

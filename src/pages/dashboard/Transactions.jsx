@@ -1,5 +1,4 @@
 /* Transactions.jsx — responsive + polished filters */
-"use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -62,6 +61,44 @@ const formatFaix = (value) =>
     minimumFractionDigits: 4,
     maximumFractionDigits: 4,
   });
+
+// Wrap a CSV cell in quotes and escape any quotes it contains, per RFC 4180.
+const csvCell = (value) => `"${String(value ?? "").replace(/"/g, '""')}"`;
+
+/**
+ * Builds a CSV file from the given transactions and triggers a browser
+ * download. Runs entirely client-side — no server round-trip needed.
+ */
+function exportTransactionsToCsv(transactions, filenamePrefix = "transactions") {
+  if (!transactions?.length) return;
+
+  const header = ["Asset", "Type", "Amount (FAIX)", "Status", "Date", "Reference"];
+  const rows = transactions.map((t) => [
+    t.asset,
+    t.type,
+    (t.amount >= 0 ? "" : "-") + formatFaix(Math.abs(t.amount)),
+    t.status,
+    t.date instanceof Date && !Number.isNaN(t.date.getTime()) ? t.date.toISOString() : "",
+    t.ref || "",
+  ]);
+
+  const csv = [header, ...rows]
+    .map((row) => row.map(csvCell).join(","))
+    .join("\r\n");
+
+  // Prepend a BOM so Excel opens UTF-8 CSVs (₹/− signs, etc.) correctly.
+  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  const stamp = new Date().toISOString().slice(0, 10);
+
+  link.href = url;
+  link.download = `${filenamePrefix}-${stamp}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
 
 function SelectField({ value, onChange, options, allLabel }) {
   const [open, setOpen] = useState(false);
@@ -246,6 +283,7 @@ export default function Transactions({ onNavigate = () => {} }) {
   const [type, setType] = useState("All");
   const [status, setStatus] = useState("All");
   const [page, setPage] = useState(0);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -315,6 +353,19 @@ export default function Transactions({ onNavigate = () => {} }) {
 
   const pending = txs.filter((t) => t.status === "Pending").length;
 
+  // Exports whatever the user is currently looking at: if a search/type/
+  // status filter is active, only the filtered rows go out; otherwise it's
+  // every loaded transaction.
+  const handleExportCsv = () => {
+    if (exporting || !filtered.length) return;
+    setExporting(true);
+    try {
+      exportTransactionsToCsv(filtered, "metalan-transactions");
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <PageShell active="Transactions" onNavigate={onNavigate}>
       <div className="mx-auto w-full max-w-7xl min-w-0 space-y-5 overflow-x-hidden sm:space-y-6">
@@ -327,10 +378,12 @@ export default function Transactions({ onNavigate = () => {} }) {
           right={
             <button
               type="button"
-              className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.05] px-4 py-2.5 text-sm font-semibold text-slate-200 backdrop-blur transition hover:border-cyan-400/40 hover:text-cyan-200 sm:w-auto"
+              onClick={handleExportCsv}
+              disabled={exporting || loading || !filtered.length}
+              className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.05] px-4 py-2.5 text-sm font-semibold text-slate-200 backdrop-blur transition hover:border-cyan-400/40 hover:text-cyan-200 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto"
             >
               <Download className="h-4 w-4" />
-              Export CSV
+              {exporting ? "Exporting…" : "Export CSV"}
             </button>
           }
         />
